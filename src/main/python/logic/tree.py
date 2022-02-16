@@ -10,80 +10,8 @@ Module implementing the k-d tree
 
 from math import sqrt
 from typing import Union
-
-
-class Point:
-    """
-    Class implementing the Point of Node location
-    """
-
-    def __init__(self, x: float = None, y: float = None):
-        self._x = x
-        self._y = y
-
-    def __str__(self):
-        return f"({self._x}, {self._y})"
-
-    def __getitem__(self, item):
-        if item == 0:
-            return self._x
-        elif item == 1:
-            return self._y
-        raise Exception("Only 0 or 1 expected")
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @x.setter
-    def x(self, new_x: float):
-        self._x = new_x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    @y.setter
-    def y(self, new_y: float):
-        self._y = new_y
-
-
-class Node:
-    """
-    Class implementing the Node of k-d tree
-    """
-
-    def __init__(self, init_point: Point = None):
-        self._point = init_point
-        self._left_child = None
-        self._right_child = None
-
-    def __str__(self):
-        return f"Node - {self._point}"
-
-    @property
-    def left_child(self):
-        return self._left_child
-
-    @left_child.setter
-    def left_child(self, node):
-        self._left_child = node
-
-    @property
-    def right_child(self):
-        return self._right_child
-
-    @right_child.setter
-    def right_child(self, node):
-        self._right_child = node
-
-    @property
-    def point(self):
-        return self._point
-
-    @point.setter
-    def point(self, point: Point):
-        self._point = point
+from point import Point
+from node import Node
 
 
 class KdTree:
