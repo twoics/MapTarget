@@ -63,8 +63,8 @@ class TestNode(unittest.TestCase):
 class TestTree(unittest.TestCase):
     def test_build(self):
         points_list = [Point(5, 4), Point(2, 6), Point(13, 3), Point(8, 7), Point(3, 1), Point(10, 2)]
-        tree = KdTree()
-        root = tree.build_kd_tree(points_list)
+        tree = KdTree(points_list)
+        root = tree.get_root()
 
         self.assertEqual(root.point, points_list[3])
         self.assertEqual(root.left_child.point, points_list[0])
@@ -86,9 +86,9 @@ class TestTree(unittest.TestCase):
 
     def test_closest_point(self):
         points_list = [Point(5, 4), Point(2, 6), Point(13, 3), Point(8, 7), Point(3, 1), Point(10, 2)]
-        tree = KdTree()
-        root = tree.build_kd_tree(points_list)
-        nearest_point = tree.kdtree_closest_point(root, Point(9, 4))
+        tree = KdTree(points_list)
+
+        nearest_point = tree.closest_point(Point(9, 4))
         self.assertEqual(nearest_point, points_list[-1])
 
 
