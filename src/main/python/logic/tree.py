@@ -10,8 +10,8 @@ Module implementing the k-d tree
 
 from math import sqrt
 from typing import Union
-from .point import Point
-from .node import Node
+from point import Point
+from node import Node
 
 
 class KdTree:
@@ -27,14 +27,22 @@ class KdTree:
         self._space = 2  # Since this tree was built for the map, the space is two-dimensional
         self._root_node = self._build_tree(init_points)
 
-    def __str__(self):
-        self._print_tree(self._root_node)
-
     def get_root(self) -> Node:
         """
         :return: Root Node of KD tree
         """
         return self._root_node
+
+    def add(self, node: Node) -> None:
+        """
+        Add node into the K-D tree
+        :param node: Node to be added
+        :return: None
+        """
+        if self._root_node:
+            self._add(node, self._root_node)
+        else:
+            self._root_node = node
 
     def rebuild_tree(self, points_list: list) -> Union[Node, None]:
         """
@@ -53,7 +61,7 @@ class KdTree:
         """
         return self._closest_point(self._root_node, point)
 
-    def _print_tree(self, node: Node, level=0) -> None:
+    def print_tree(self, node: Node, level=0) -> None:
         """
         Printed k-d tree
         :param node: Node for print
@@ -61,9 +69,34 @@ class KdTree:
         :return: None
         """
         if node is not None:
-            self._print_tree(node.left_child, level + 1)
+            self.print_tree(node.left_child, level + 1)
             print(' ' * 15 * level + '->', node.point)
-            self._print_tree(node.right_child, level + 1)
+            self.print_tree(node.right_child, level + 1)
+
+    def _add(self, node: Node, root: Node, depth=0) -> None:
+        """
+        Traverses the tree, looking for a place to insert a node, once found, inserts the node
+        :param node: Node to be added
+        :param root: Root node K-d tree
+        :param depth: Recursive parameter
+        :return: None
+        """
+        if root is None:
+            return None
+
+        axis = depth % self._space
+        point = node.point
+
+        if point[axis] < root.point[axis]:
+            next_branch = root.left_child
+            if next_branch is None:
+                root.left_child = node
+        else:
+            next_branch = root.right_child
+            if next_branch is None:
+                root.right_child = node
+
+        self._add(node, next_branch, depth + 1)
 
     def _closest_point(self, root: Node, point: Point, depth=0) -> Union[Point, None]:
         """
