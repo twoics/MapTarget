@@ -4,10 +4,6 @@ Module implementing the k-d tree
 
 # TODO Write Test for build K-D tree and for Closest Distance
 
-# TODO Operation add
-# TODO Operation del
-# TODO Operation in area
-
 from math import sqrt
 from typing import Union
 from point import Point
@@ -24,6 +20,7 @@ class KdTree:
         Builds a k-d tree based on the set of points passed in the array
         :param init_points: Points on which to build a k-d tree
         """
+        self._points_in_area = list()
         self._dimension = 2  # Since this tree was built for the map, the space is two-dimensional
         self._root_node = self._build_tree(init_points)
 
@@ -57,6 +54,19 @@ class KdTree:
         else:
             self._del(node, self._root_node)
 
+    def check_entry(self, point_1: Point, point_2: Point) -> list:
+        """
+        Outputs a list of nodes that are included in the area from point1 to point2
+        :param point_1: First point
+        :param point_2: Second point
+        :return: List with nodes
+        """
+        self._points_in_area.clear()
+        if point_1.x > point_2.x or point_1.y > point_2.y:
+            raise ValueError("First point must be less then second")
+        self._entry_field(point_1, point_2, self._root_node)
+        return self._points_in_area.copy()
+
     def rebuild_tree(self, points_list: list) -> Union[Node, None]:
         """
         Rebuild KD tree by points
@@ -85,6 +95,33 @@ class KdTree:
             self.print_tree(node.right_child, level + 1)
             print(' ' * 8 * level + '->', node.point)
             self.print_tree(node.left_child, level + 1)
+
+    def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
+        """
+        Iterated by nodes, depending on their location, relative to the area, goes
+        to the left or right subtree, otherwise if the area intersects the dimension of current node,
+        checks if the node is in the area, then iterates through both subtrees
+        :param start_pos: Start area position
+        :param end_pos: End area position
+        :param node: Current Node
+        :param depth: Tree depth
+        :return: None
+        """
+        if node is None:
+            return None
+
+        axis = depth % self._dimension
+        point = node.point
+
+        if point[axis] > start_pos[axis] and point[axis] > end_pos[axis]:  # Area left or down
+            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
+        elif point[axis] < start_pos[axis] and point[axis] < end_pos[axis]:  # Area right or up
+            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+        else:  # Area across axis
+            if start_pos.x <= point.x <= end_pos.x and start_pos.y <= point.y <= end_pos.y:  # Point in area
+                self._points_in_area.append(node)
+            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
+            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
 
     def _add(self, node: Node, root: Node, depth=0) -> None:
         """
@@ -225,7 +262,14 @@ class KdTree:
 
         return root
 
-    def _minimum_node(self, root: Node, axis_target: int, axis_current: int):
+    def _minimum_node(self, root: Node, axis_target: int, axis_current: int) -> Union[Node, None]:
+        """
+        Find node with minimum item in Kd-tree by axis_target
+        :param root: Current Node
+        :param axis_target: Dimension by which we need to find the minimum element
+        :param axis_current: Current Dimension
+        :return: Minimum node or None
+        """
         if root is None:
             return None
         if axis_target == axis_current:
@@ -281,3 +325,8 @@ def _euclidean_distance(point_1: Point, point_2: Point) -> float:
     delta_y = y1 - y2
 
     return sqrt(delta_x ** 2 + delta_y ** 2)
+
+
+t = KdTree([Point(5, 4), Point(2, 6), Point(13, 3), Point(8, 7), Point(3, 1), Point(10, 2)])
+t.add(Node(Point(2, 3)))
+t.add(Node(Point(4, 3)))
