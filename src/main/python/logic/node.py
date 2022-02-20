@@ -1,3 +1,7 @@
+"""
+Module implementing the node of k-d tree
+"""
+
 from .point import Point
 
 
@@ -6,8 +10,8 @@ class Node:
     Class implementing the Node of k-d tree
     """
 
-    def __init__(self, init_point: Point = None):
-        self._point = init_point
+    def __init__(self, init_point: Point):
+        self._point = Point(init_point.x, init_point.y)
         self._left_child = None
         self._right_child = None
 
@@ -36,4 +40,4 @@ class Node:
 
     @point.setter
     def point(self, point: Point):
-        self._point = point
+        self._point.x, self._point.y = point.x, point.y

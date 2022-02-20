@@ -1,3 +1,8 @@
+"""
+Module implementing the point of node location
+"""
+
+
 class Point:
     """
     Class implementing the Point of Node location
@@ -16,6 +21,13 @@ class Point:
         elif item == 1:
             return self._y
         raise Exception("Only 0 or 1 expected")
+
+    def __eq__(self, other):
+        if isinstance(other, Point):
+            if other.x == self._x and other.y == self._y:
+                return True
+            return False
+        # Else compare as object
 
     @property
     def x(self) -> float:
