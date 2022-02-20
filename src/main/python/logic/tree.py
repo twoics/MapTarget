@@ -2,12 +2,10 @@
 Module implementing the k-d tree
 """
 
-# TODO Write Test for build K-D tree and for Closest Distance
-
 from math import sqrt
 from typing import Union
-from point import Point
-from node import Node
+from .point import Point
+from .node import Node
 
 
 class KdTree:
@@ -22,7 +20,13 @@ class KdTree:
         """
         self._points_in_area = list()
         self._dimension = 2  # Since this tree was built for the map, the space is two-dimensional
-        self._root_node = self._build_tree(init_points)
+        self._root_node = self._build_tree(init_points.copy())
+        self._output_str = ""
+
+    def __str__(self):
+        self._output_str = ""
+        self._tree_to_str(self._root_node)
+        return self._output_str
 
     def get_root(self) -> Node:
         """
@@ -30,29 +34,30 @@ class KdTree:
         """
         return self._root_node
 
-    def add(self, node: Node) -> None:
+    def add(self, point: Point) -> None:
         """
         Add node into the K-D tree
-        :param node: Node to be added
+        :param point: Point to be added
         :return: None
         """
         if self._root_node:
-            self._add(node, self._root_node)
+            self._add(Node(point), self._root_node)
         else:
-            self._root_node = node
+            self._root_node = Node(point)
 
-    def remove(self, node: Node) -> None:
+    def remove(self, point: Point) -> None:
         """
         Delete Node from k-d Tree
-        :param node: Node to delete
+        :param point: Point to delete
         :return: None
         """
-        if node is None or self._root_node is None:
+        if point is None or self._root_node is None:
             return
-        if self._root_node.left_child is None and self._root_node.right_child is None and node is self._root_node:
+        if self._root_node.left_child is None and self._root_node.right_child is None and point == \
+                self._root_node.point:
             self._root_node = None
         else:
-            self._del(node, self._root_node)
+            self._del(Node(point), self._root_node)
 
     def check_entry(self, point_1: Point, point_2: Point) -> list:
         """
@@ -84,7 +89,7 @@ class KdTree:
         """
         return self._closest_point(self._root_node, point)
 
-    def print_tree(self, node: Node, level=0) -> None:
+    def _tree_to_str(self, node: Node, level=0) -> None:
         """
         Printed k-d tree
         :param node: Node for print
@@ -92,9 +97,9 @@ class KdTree:
         :return: None
         """
         if node is not None:
-            self.print_tree(node.right_child, level + 1)
-            print(' ' * 8 * level + '->', node.point)
-            self.print_tree(node.left_child, level + 1)
+            self._tree_to_str(node.right_child, level + 1)
+            self._output_str += (' ' * 8 * level + '->' + str(node.point) + "\n")
+            self._tree_to_str(node.left_child, level + 1)
 
     def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
         """
@@ -119,7 +124,7 @@ class KdTree:
             self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
         else:  # Area across axis
             if start_pos.x <= point.x <= end_pos.x and start_pos.y <= point.y <= end_pos.y:  # Point in area
-                self._points_in_area.append(node)
+                self._points_in_area.append(node.point)
             self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
             self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
 
@@ -162,7 +167,7 @@ class KdTree:
 
         dimension = dimension % self._dimension
 
-        if del_node == curr_root:
+        if del_node.point == curr_root.point:
 
             if curr_root.right_child is not None:
                 right_min = self._minimum_node(curr_root.right_child, dimension, dimension + 1)
@@ -325,8 +330,3 @@ def _euclidean_distance(point_1: Point, point_2: Point) -> float:
     delta_y = y1 - y2
 
     return sqrt(delta_x ** 2 + delta_y ** 2)
-
-
-t = KdTree([Point(5, 4), Point(2, 6), Point(13, 3), Point(8, 7), Point(3, 1), Point(10, 2)])
-t.add(Node(Point(2, 3)))
-t.add(Node(Point(4, 3)))
