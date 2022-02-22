@@ -3,9 +3,9 @@ Module implementing the node of k-d tree
 """
 
 from .point import Point
-from typing import Tuple
+from typing import Tuple, Union
 
-POINT = Tuple[float, float]
+POINT = Tuple[Union[float, int], Union[float, int]]
 
 
 class Node:

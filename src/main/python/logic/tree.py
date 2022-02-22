@@ -7,26 +7,80 @@ from typing import Union, Tuple, List
 from .point import Point
 from .node import Node
 
+INIT_TREE = Tuple[Tuple[Union[float, int], Union[float, int], Union[dict, None]], ...]
+POINT = Tuple[Union[float, int], Union[float, int]]
 
-# TODO Nodes in AREA
-# TODO CHECK BY NODES
+
+def _unpack(data: INIT_TREE) -> List[Node]:
+    """
+    Unpack INIT_TREE to Node list
+    :param data: Init tuple with points
+    :return: Nodes List
+    """
+    nodes = []
+    for tup in data:
+        new_node = Node((tup[0], tup[1]), data=tup[2])
+        nodes.append(new_node)
+    return nodes
+
+
+def _nearest_node(pivot: Point, node_1: Union[Node, None], node_2: [Node, None]) -> Union[Node, None]:
+    """
+    Returns the point that is closer to the pivot
+    :param pivot: The point to which we are looking for the closest
+    :param node_1: First point
+    :param node_2: Second point
+    :return: Nearest point to pivot
+    """
+    if node_1 is None:
+        return node_2
+
+    if node_2 is None:
+        return node_1
+
+    pivot_node = Node((pivot.x, pivot.y))
+
+    distance_1 = _euclidean_distance_node(pivot_node, node_1)
+    distance_2 = _euclidean_distance_node(pivot_node, node_2)
+
+    if distance_1 < distance_2:
+        return node_1
+    else:
+        return node_2
+
+
+def _euclidean_distance_node(node_1: Node, node_2: Node) -> float:
+    """
+    Calculate euclidean distance by 2 points
+    :param node_1: First point
+    :param node_2: Second point
+    :return: Euclidean distance
+    """
+    x1, y1 = node_1.point[0], node_1.point[1]
+    x2, y2 = node_2.point[0], node_2.point[1]
+
+    delta_x = x1 - x2
+    delta_y = y1 - y2
+
+    return sqrt(delta_x ** 2 + delta_y ** 2)
+
 
 class KdTree:
     """
     The class that implements KD tree
     """
 
-    def __init__(self, init_nodes: list):
+    def __init__(self, init_nodes: INIT_TREE = None):
         """
-        Builds a k-d tree based on the set of points passed in the array
-        :param init_nodes: Points on which to build a k-d tree
+        Builds a k-d tree based on the tuple of points
+        :param init_nodes: Tuple with points and data by which to build a tree
         """
-        if not all(isinstance(node, Node) for node in init_nodes):
-            raise ValueError("All of init_nodes must be Node")
         self._nodes_in_area = []
         self._dimension = 2  # Since this tree was built for the map, the space is two-dimensional
-        self._root_node = self._build_tree(init_nodes)
         self._output_str = ""
+
+        # Build tree if init nodes is not None
+        self._root_node = self._build_tree(_unpack(init_nodes)) if init_nodes is not None else None
 
     def __str__(self):
         self._output_str = ""
@@ -39,74 +93,71 @@ class KdTree:
         """
         return self._root_node
 
-    def insert(self, node: Node) -> None:
+    def insert(self, x_cord: Union[int, float], y_cord: Union[int, float], data: dict = None) -> None:
         """
-        Add node into the K-D tree
-        :param node: Point to be added
+        Insert node with x,y coordinates into k-d tree
+        :param x_cord: The x-axis coordinate of the node
+        :param y_cord: The y-axis coordinate of the node
+        :param data: Data stored by the node
         :return: None
         """
+        node = Node((x_cord, y_cord), data=data)
         if self._root_node:
             self._add(node, self._root_node)
         else:
             self._root_node = node
 
-    def remove(self, node: Node) -> None:
+    def remove(self, x_cord: Union[int, float], y_cord: Union[int, float]) -> None:
         """
-        Delete Node from k-d Tree
-        :param node: Point to delete
+        Removes a node with x,y coordinates from the k-d tree
+        :param x_cord: The x-axis coordinate of the node
+        :param y_cord: The y-axis coordinate of the node
         :return: None
         """
+        node = Node((x_cord, y_cord))
         if node is None or self._root_node is None:
             return
-        if self._root_node.left_child is None and self._root_node.right_child is None and node is \
-                self._root_node:
+        elif self._root_node.left_child is None and self._root_node.right_child is None and node.point == \
+                self._root_node.point:
             self._root_node = None
         else:
             self._del(node, self._root_node)
 
-    def check_entry(self, point_1: Point, point_2: Point) -> list:
+    def check_entry(self, start_point: POINT, end_point: POINT) -> list:
         """
-        Outputs a list of nodes that are included in the area from point1 to point2
-        :param point_1: First point
-        :param point_2: Second point
+        Outputs a list of nodes that are included in the area from start_point to end_point
+        :param start_point: First point
+        :param end_point: Second point
         :return: List with nodes
         """
         self._nodes_in_area.clear()
+
+        point_1 = Point(start_point[0], start_point[1])
+        point_2 = Point(end_point[0], end_point[1])
+
         if point_1.x > point_2.x or point_1.y > point_2.y:
             raise ValueError("First point must be less then second")
         self._entry_field(point_1, point_2, self._root_node)
         return self._nodes_in_area
 
-    def rebuild_tree(self, nodes_list: list) -> Union[Node, None]:
+    def rebuild_tree(self, init_nodes: INIT_TREE) -> Union[Node, None]:
         """
         Rebuild KD tree by points
-        :param nodes_list: List with points by which to build a tree
+        :param init_nodes: Tuple with points and data by which to build a tree
         :return: Root Node of KD-tree
         """
-        if not all(isinstance(node, Node) for node in nodes_list):
-            raise ValueError("All of init_nodes must be Node")
-        self._root_node = self._build_tree(nodes_list)
+        self._root_node = self._build_tree(_unpack(init_nodes))
         return self._root_node
 
-    def closest_node(self, point: Point) -> Union[Node, None]:
+    def closest_node(self, point_x: Union[int, float], point_y: Union[int, float]) -> Union[Node, None]:
         """
         Looks for the closest point of the tree next to the pivot
-        :param point: Pivot point
+        :param point_x: The x-coordinate of the point
+        :param point_y: The y-coordinate of the point
         :return: Nearest Point
         """
-        return self._closest_point(self._root_node, point)
-
-    def _tree_to_str(self, node: Node, level=0) -> None:
-        """
-        Printed k-d tree
-        :param node: Node for print
-        :param level: Recursion level
-        :return: None
-        """
-        if node is not None:
-            self._tree_to_str(node.right_child, level + 1)
-            self._output_str += (' ' * 8 * level + '->' + str(node.point) + "\n")
-            self._tree_to_str(node.left_child, level + 1)
+        pivot = Point(point_x, point_y)
+        return self._closest_point(self._root_node, pivot)
 
     def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
         """
@@ -174,7 +225,7 @@ class KdTree:
 
         dimension = dimension % self._dimension
 
-        if del_node is curr_root:
+        if del_node.point == curr_root.point:
 
             if curr_root.right_child is not None:
                 right_min = self._minimum_node(curr_root.right_child, dimension, dimension + 1)
@@ -305,43 +356,14 @@ class KdTree:
             result = left_min
         return result
 
-
-def _nearest_node(pivot: Point, node_1: Union[Node, None], node_2: [Node, None]) -> Union[Node, None]:
-    """
-    Returns the point that is closer to the pivot
-    :param pivot: The point to which we are looking for the closest
-    :param node_1: First point
-    :param node_2: Second point
-    :return: Nearest point to pivot
-    """
-    if node_1 is None:
-        return node_2
-
-    if node_2 is None:
-        return node_1
-
-    pivot_node = Node((pivot.x, pivot.y))
-
-    distance_1 = _euclidean_distance_node(pivot_node, node_1)
-    distance_2 = _euclidean_distance_node(pivot_node, node_2)
-
-    if distance_1 < distance_2:
-        return node_1
-    else:
-        return node_2
-
-
-def _euclidean_distance_node(node_1: Node, node_2: Node) -> float:
-    """
-    Calculate euclidean distance by 2 points
-    :param node_1: First point
-    :param node_2: Second point
-    :return: Euclidean distance
-    """
-    x1, y1 = node_1.point[0], node_1.point[1]
-    x2, y2 = node_2.point[0], node_2.point[1]
-
-    delta_x = x1 - x2
-    delta_y = y1 - y2
-
-    return sqrt(delta_x ** 2 + delta_y ** 2)
+    def _tree_to_str(self, node: Node, level=0) -> None:
+        """
+        Printed k-d tree
+        :param node: Node for print
+        :param level: Recursion level
+        :return: None
+        """
+        if node is not None:
+            self._tree_to_str(node.right_child, level + 1)
+            self._output_str += (' ' * 8 * level + '->' + str(node.point) + "\n")
+            self._tree_to_str(node.left_child, level + 1)
