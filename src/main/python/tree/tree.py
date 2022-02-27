@@ -2,67 +2,13 @@
 Module implementing the k-d tree
 """
 
-from math import sqrt
-from typing import Union, Tuple, List
+from typing import Union, Tuple
 from .point import Point
 from .node import Node
+from .auxiliary_func import unpack, nearest_node, euclidean_distance_node, sphere_distance, nearest_node_map
 
 INIT_TREE = Tuple[Tuple[Union[float, int], Union[float, int], Union[dict, None]], ...]
 POINT = Tuple[Union[float, int], Union[float, int]]
-
-
-def _unpack(data: INIT_TREE) -> List[Node]:
-    """
-    Unpack INIT_TREE to Node list
-    :param data: Init tuple with points
-    :return: Nodes List
-    """
-    nodes = []
-    for tup in data:
-        new_node = Node((tup[0], tup[1]), data=tup[2])
-        nodes.append(new_node)
-    return nodes
-
-
-def _nearest_node(pivot: Point, node_1: Union[Node, None], node_2: [Node, None]) -> Union[Node, None]:
-    """
-    Returns the point that is closer to the pivot
-    :param pivot: The point to which we are looking for the closest
-    :param node_1: First point
-    :param node_2: Second point
-    :return: Nearest point to pivot
-    """
-    if node_1 is None:
-        return node_2
-
-    if node_2 is None:
-        return node_1
-
-    pivot_node = Node((pivot.x, pivot.y))
-
-    distance_1 = _euclidean_distance_node(pivot_node, node_1)
-    distance_2 = _euclidean_distance_node(pivot_node, node_2)
-
-    if distance_1 < distance_2:
-        return node_1
-    else:
-        return node_2
-
-
-def _euclidean_distance_node(node_1: Node, node_2: Node) -> float:
-    """
-    Calculate euclidean distance by 2 points
-    :param node_1: First point
-    :param node_2: Second point
-    :return: Euclidean distance
-    """
-    x1, y1 = node_1.point[0], node_1.point[1]
-    x2, y2 = node_2.point[0], node_2.point[1]
-
-    delta_x = x1 - x2
-    delta_y = y1 - y2
-
-    return sqrt(delta_x ** 2 + delta_y ** 2)
 
 
 class KdTree:
@@ -80,7 +26,7 @@ class KdTree:
         self._output_str = ""
 
         # Build tree if init nodes is not None
-        self._root_node = self._build_tree(_unpack(init_nodes)) if init_nodes is not None else None
+        self._root_node = self._build_tree(unpack(init_nodes)) if init_nodes is not None else None
 
     def __str__(self):
         self._output_str = ""
@@ -146,18 +92,28 @@ class KdTree:
         :param init_nodes: Tuple with points and data by which to build a tree
         :return: Root Node of KD-tree
         """
-        self._root_node = self._build_tree(_unpack(init_nodes))
+        self._root_node = self._build_tree(unpack(init_nodes))
         return self._root_node
 
     def closest_node(self, point_x: Union[int, float], point_y: Union[int, float]) -> Union[Node, None]:
         """
-        Looks for the closest point of the tree next to the pivot
+        Searches for the nearest node in a two-dimensional plane with x- and y-axes
         :param point_x: The x-coordinate of the point
         :param point_y: The y-coordinate of the point
         :return: Nearest Point
         """
         pivot = Point(point_x, point_y)
-        return self._closest_point(self._root_node, pivot)
+        return self._closest_node(self._root_node, pivot)
+
+    def closest_node_map(self, latitude: Union[int, float], longitude: Union[int, float]) -> Union[Node, None]:
+        """
+        Searches for the nearest node on the map, at a point whose coordinates are given in latitude and longitude
+        :param latitude: Latitude of the point for which you need to find the closest node
+        :param longitude: Longitude of the point for which you need to find the closest node
+        :return: Nearest node or None
+        """
+        pivot = Point(latitude, longitude)
+        return self._closest_node_map(self._root_node, pivot)
 
     def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
         """
@@ -256,7 +212,7 @@ class KdTree:
 
         return curr_root
 
-    def _closest_point(self, root: Node, point: Point, depth=0) -> Union[Node, None]:
+    def _closest_node(self, root: Node, point: Point, depth=0) -> Union[Node, None]:
         """
         Calculate the closest point to pivot
         :param root: Root node of K-d tree
@@ -277,21 +233,63 @@ class KdTree:
             next_branch = root.right_child
             opposite_branch = root.left_child
 
-        best = _nearest_node(point,
-                             self._closest_point(next_branch,
-                                                 point,
-                                                 depth + 1),
-                             root)
+        best = nearest_node(point,
+                            self._closest_node(next_branch,
+                                               point,
+                                               depth + 1),
+                            root)
+
+        node_point = Node((point.x, point.y))
 
         # If distance from pivot to 'best' node bigger than module by distance(perpendicular)
         # from pivot to space section -> check opposite branch (maybe there is a node closer)
+        if euclidean_distance_node(node_point, best) > abs(point[axis] - root.point[axis]):
+            best = nearest_node(point,
+                                self._closest_node(opposite_branch,
+                                                   point,
+                                                   depth + 1),
+                                best)
+
+        return best
+
+    def _closest_node_map(self, root: Node, point: Point, depth=0) -> Union[Node, None]:
+        """
+        Calculate the closest point to pivot on map
+        :param root: Root node of K-d tree
+        :param point: The point to which we are looking for the closest
+        :param depth: Recursive parameter
+        :return: Closest Point
+        """
+
+        if root is None:
+            return None
+
+        axis = depth % self._dimension
+
+        if point[axis] < root.point[axis]:
+            next_branch = root.left_child
+            opposite_branch = root.right_child
+        else:
+            next_branch = root.right_child
+            opposite_branch = root.left_child
+
+        best = nearest_node_map(point,
+                                self._closest_node_map(next_branch,
+                                                   point,
+                                                   depth + 1),
+                                root)
+
         node_point = Node((point.x, point.y))
-        if _euclidean_distance_node(node_point, best) > abs(point[axis] - root.point[axis]):
-            best = _nearest_node(point,
-                                 self._closest_point(opposite_branch,
-                                                     point,
-                                                     depth + 1),
-                                 best)
+
+        # If distance from pivot to 'best' node bigger than module by distance(perpendicular)
+        # from pivot to space section -> check opposite branch (maybe there is a node closer)
+        if sphere_distance(node_point.point[0], node_point.point[1], best.point[0], best.point[1]) > abs(
+                point[axis] - root.point[axis]):
+            best = nearest_node_map(point,
+                                    self._closest_node_map(opposite_branch,
+                                                       point,
+                                                       depth + 1),
+                                    best)
 
         return best
 
