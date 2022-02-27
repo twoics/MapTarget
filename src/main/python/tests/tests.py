@@ -1,6 +1,6 @@
-from src.main.python.logic.point import Point
-from src.main.python.logic.node import Node
-from src.main.python.logic.tree import KdTree
+from src.main.python.tree.point import Point
+from src.main.python.tree.node import Node
+from src.main.python.tree.tree import KdTree
 import unittest
 
 DATA_SHORT = (
