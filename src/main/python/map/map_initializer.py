@@ -48,19 +48,27 @@ JAVA_SCRIPT = """
 
               //Add a marker to show where you clicked.
               theMarker = layer;
+              if (type == 'marker')
+              {
+                alert([type, [layer.getLatLng()]]);
+              }
+              else
+              {
+                alert([type, [layer.getLatLngs()]]);
+              }
               drawnItems.addLayer(layer);
-              alert(type);
             });
 """
 
 
-def pure_custom_map() -> folium.Map:
+def pure_custom_map(location: list = None) -> folium.Map:
     """
     Creates a new custom folium map,
     with the ability to draw on it
     :return: Pure Folium map
     """
-    f_map = folium.Map(location=USER_LOCATION)
+    current_location = location if location else USER_LOCATION
+    f_map = folium.Map(location=current_location)
 
     custom_html = WebParser(html=HTML)
     custom_js = WebParser(script=JAVA_SCRIPT, args={'map': f_map.get_name()})

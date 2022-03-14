@@ -3,14 +3,7 @@ from branca.element import Template, MacroElement, Element
 
 class WebParser(MacroElement):
     """
-    Creates a small snippet of raw JavaScript.
-
-    Parameters
-    ----------
-    script: string, representing the JavaScript code to insert in the html file
-    html: string, representing html code to insert in the <body> section of the html file
-    args: dict, mapping between python vars and folium vars
-
+    Parse JS or HTML
     """
     _template = Template(
         u"""{% macro html(this, args) %}
