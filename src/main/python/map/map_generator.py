@@ -1,5 +1,5 @@
 from src.main.python.tree.tree import KdTree
-from src.main.python.map.queries import query_by_reserved, query_by_name
+from src.main.python.map.queries import query_by_reserved, query_by_name, get_reserved
 from src.main.python.map.map_initializer import pure_custom_map
 from itertools import zip_longest
 from typing import Union, Tuple
@@ -102,6 +102,9 @@ class Map:
         ).add_to(self._map)
 
         return self._map
+
+    def get_reserved_queries(self) -> list:
+        return get_reserved()
 
     def _build_map_by_query(self, query: overpy.Result) -> folium.Map:
         """

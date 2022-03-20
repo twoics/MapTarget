@@ -43,11 +43,13 @@ class WebEnginePage(QWebEnginePage):
         pass
 
 
-class MapUI(QWebEngineView):
+class MapUI(QtCore.QObject):
     """
     The class represents the UI for the map
     """
     some_error = QtCore.pyqtSignal(str)
+    search_done = QtCore.pyqtSignal()
+    refresh_map = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -56,9 +58,13 @@ class MapUI(QWebEngineView):
         self.mapa = None
 
         self.generator = Map()
-        self.page = WebEnginePage(self)
-        self.setPage(self.page)
+        self.view = QWebEngineView()
+        self.page = WebEnginePage(self.view)
+        self.view.setPage(self.page)
         self._init_signals()
+
+    def get_view(self):
+        return self.view
 
     def find_nearest(self) -> None:
         """
@@ -76,20 +82,7 @@ class MapUI(QWebEngineView):
             return
 
         self.mapa = result
-        self._refresh_map()
-
-    def set_map_by_name(self, name: str) -> None:
-        """
-        Builds a map by finding special objects by name in the selected area
-        :param name: Name by which to find objects
-        :return: None
-        """
-        if self.rect_points is None:
-            self.some_error.emit(EMPTY_AREA_WARNING)
-            return
-
-        self.mapa = self.generator.map_by_name(name, self.rect_points[0], self.rect_points[2])
-        self._refresh_map()
+        self.refresh_map.emit()
 
     def set_map_by_query(self, query: str) -> None:
         """
@@ -98,11 +91,18 @@ class MapUI(QWebEngineView):
         :return: None
         """
         if self.rect_points is None:
+            self.search_done.emit()
             self.some_error.emit(EMPTY_AREA_WARNING)
             return
 
-        self.mapa = self.generator.map_by_reserved(query, self.rect_points[0], self.rect_points[2])
-        self._refresh_map()
+        if query in self.generator.get_reserved_queries():
+            self.mapa = self.generator.map_by_reserved(query, self.rect_points[0], self.rect_points[2])
+        else:
+            self.mapa = self.generator.map_by_name(query, self.rect_points[0], self.rect_points[2])
+
+        self.refresh_map.emit()
+
+        self.search_done.emit()
 
     def clear_map(self) -> None:
         """
@@ -110,7 +110,7 @@ class MapUI(QWebEngineView):
         :return: None
         """
         self.mapa = self.generator.pure_map()
-        self._refresh_map()
+        self.refresh_map.emit()
 
     def _item_drawn(self, data: tuple) -> None:
         """
@@ -131,6 +131,7 @@ class MapUI(QWebEngineView):
         :return: None
         """
         self.page.item_drawn.connect(self._item_drawn)
+        self.refresh_map.connect(self._refresh_map)
 
     def _refresh_map(self):
         """
@@ -142,4 +143,4 @@ class MapUI(QWebEngineView):
 
         data = io.BytesIO()
         self.mapa.save(data, close_file=False)
-        self.setHtml(data.getvalue().decode())  # give html of folium map to webengine
+        self.view.setHtml(data.getvalue().decode())  # give html of folium map to webengine

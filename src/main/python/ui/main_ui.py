@@ -1,11 +1,15 @@
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtGui import QMovie, QColor
+
 from map_ui import MapUI
 import icons  # Doesn't remove this, it's icons import
 import sys
 
 
 class MainUI(QMainWindow):
+    search_objects = QtCore.pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.centralwidget = QtWidgets.QWidget(self)
@@ -48,6 +52,10 @@ class MainUI(QMainWindow):
         self.hospital = QtWidgets.QPushButton(self.buttons)
         self.mall = QtWidgets.QPushButton(self.buttons)
         self.map = MapUI()
+
+        self._thread = QtCore.QThread()
+        self.map.moveToThread(self._thread)
+
         self.footer = QtWidgets.QFrame(self.body)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.footer)
         self.indicator = QtWidgets.QFrame(self.footer)
@@ -55,6 +63,9 @@ class MainUI(QMainWindow):
         self.busy_indicator = QtWidgets.QLabel(self.indicator)
         self.find_butt = QtWidgets.QPushButton(self.footer)
         self.clear_all = QtWidgets.QPushButton(self.footer)
+        self.movie = QMovie("loading.gif")
+
+        self._thread.start()
 
         self.setup_ui()
         self._init_slots()
@@ -69,22 +80,22 @@ class MainUI(QMainWindow):
         QMessageBox.warning(self, "Some warning", warning_text)
 
     def _init_buttons(self):
-        self.cafe.clicked.connect(lambda: self.map.set_map_by_query('cafe'))
-        self.fast_food.clicked.connect(lambda: self.map.set_map_by_query('fast_food'))
-        self.restaurant.clicked.connect(lambda: self.map.set_map_by_query('restaurant'))
-        self.bar.clicked.connect(lambda: self.map.set_map_by_query('bar'))
-        self.cinema.clicked.connect(lambda: self.map.set_map_by_query('cinema'))
-        self.fitness.clicked.connect(lambda: self.map.set_map_by_query('fitness'))
-        self.meseum.clicked.connect(lambda: self.map.set_map_by_query('museum'))
-        self.library.clicked.connect(lambda: self.map.set_map_by_query('library'))
-        self.sup_market.clicked.connect(lambda: self.map.set_map_by_query('supermarket'))
-        self.clothes.clicked.connect(lambda: self.map.set_map_by_query('clothes'))
-        self.mall.clicked.connect(lambda: self.map.set_map_by_query('mall'))
-        self.electronic.clicked.connect(lambda: self.map.set_map_by_query('electronic'))
-        self.hospital.clicked.connect(lambda: self.map.set_map_by_query('hospital'))
-        self.fuel.clicked.connect(lambda: self.map.set_map_by_query('fuel'))
-        self.hotel.clicked.connect(lambda: self.map.set_map_by_query('hotel'))
-        self.pharmacy.clicked.connect(lambda: self.map.set_map_by_query('pharmacy'))
+        self.cafe.clicked.connect(lambda: self.search_objects.emit('cafe'))
+        self.fast_food.clicked.connect(lambda: self.search_objects.emit('fast_food'))
+        self.restaurant.clicked.connect(lambda: self.search_objects.emit('restaurant'))
+        self.bar.clicked.connect(lambda: self.search_objects.emit('bar'))
+        self.cinema.clicked.connect(lambda: self.search_objects.emit('cinema'))
+        self.fitness.clicked.connect(lambda: self.search_objects.emit('fitness'))
+        self.meseum.clicked.connect(lambda: self.search_objects.emit('museum'))
+        self.library.clicked.connect(lambda: self.search_objects.emit('library'))
+        self.sup_market.clicked.connect(lambda: self.search_objects.emit('supermarket'))
+        self.clothes.clicked.connect(lambda: self.search_objects.emit('clothes'))
+        self.mall.clicked.connect(lambda: self.search_objects.emit('mall'))
+        self.electronic.clicked.connect(lambda: self.search_objects.emit('electronic'))
+        self.hospital.clicked.connect(lambda: self.search_objects.emit('hospital'))
+        self.fuel.clicked.connect(lambda: self.search_objects.emit('fuel'))
+        self.hotel.clicked.connect(lambda: self.search_objects.emit('hotel'))
+        self.pharmacy.clicked.connect(lambda: self.search_objects.emit('pharmacy'))
 
         self.find_name_but.clicked.connect(self._map_by_name)
 
@@ -96,7 +107,15 @@ class MainUI(QMainWindow):
             self._map_error('Empty name')
             return
 
-        self.map.set_map_by_name(name)
+        self.search_objects.emit(name)
+
+    def _show_indicator(self):
+        self.busy_indicator.setHidden(False)
+        self.movie.start()
+
+    def _hide_indicator(self):
+        self.movie.stop()
+        self.busy_indicator.setHidden(True)
 
     def _init_slots(self):
         self._init_buttons()
@@ -104,6 +123,10 @@ class MainUI(QMainWindow):
         self.clear_all.clicked.connect(self._clear_map)
         self.find_butt.clicked.connect(self._find_closest)
         self.map.some_error.connect(self._map_error)
+        self.search_objects.connect(self.map.set_map_by_query)
+
+        self.search_objects.connect(self._show_indicator)
+        self.map.search_done.connect(self._hide_indicator)
 
     def setup_ui(self):
         self.setObjectName("MainWindow")
@@ -398,8 +421,10 @@ class MainUI(QMainWindow):
         # self.map.setFrameShape(QtWidgets.QFrame.StyledPanel)
         # self.map.setFrameShadow(QtWidgets.QFrame.Raised)
         # self.map.setObjectName("map")
+        # TODO
         self.map.clear_map()
-        self.verticalLayout_2.addWidget(self.map)
+
+        self.verticalLayout_2.addWidget(self.map.get_view())
 
         self.footer.setMinimumSize(QtCore.QSize(0, 60))
         self.footer.setMaximumSize(QtCore.QSize(16777215, 60))
@@ -438,6 +463,10 @@ class MainUI(QMainWindow):
         self.busy_indicator.setText("")
         self.busy_indicator.setObjectName("busy_indicator")
         self.horizontalLayout_6.addWidget(self.busy_indicator)
+
+        self.busy_indicator.setMovie(self.movie)
+        self.busy_indicator.movie().setScaledSize(QtCore.QSize(55, 55))
+
         self.horizontalLayout_5.addWidget(self.indicator, 0, Qt.Qt.AlignLeft)
         self.find_butt.setMinimumSize(QtCore.QSize(84, 50))
         self.find_butt.setMaximumSize(QtCore.QSize(104, 50))
