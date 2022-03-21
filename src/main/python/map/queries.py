@@ -1,9 +1,15 @@
 from typing import Tuple, Union, List
+from overpy.exception import OverpassTooManyRequests, OverpassGatewayTimeout
 import overpy
+import time
+import logging
 
 POINT = Tuple[Union[int, float], Union[int, float]]
 
 API = overpy.Overpass()
+
+SHORT_BREAK = 1
+LONG_BREAK = 5
 
 RESERVED_QUERY = {
     'cafe': ["amenity", "cafe"],
@@ -33,7 +39,7 @@ def query_by_name(name: str, start_point: POINT, end_point: POINT) -> overpy.Res
     :param end_point: Ending starting point
     :return: Returns overpy.Result by name query, starting from start_point to end_point
     """
-    return API.query(f"""
+    return _query_answer(f"""
         (node["name"="{name}"]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]});
          way["name"="{name}"]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]});
          relation["name"="{name}"]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]}););
@@ -50,7 +56,7 @@ def query_by_category(category: str, target_obj: str, start_point: POINT, end_po
     :param end_point: Ending starting point
     :return: Returns overpy.Result by target_obj type of category
     """
-    return API.query(f"""
+    return _query_answer(f"""
         (node[{category}={target_obj}]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]});
          way[{category}={target_obj}]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]});
          relation[{category}={target_obj}]({start_point[0]}, {start_point[1]}, {end_point[0]}, {end_point[1]}););
@@ -77,3 +83,25 @@ def get_reserved() -> List[str]:
     :return: A list of all reserved queries
     """
     return [key for key in RESERVED_QUERY]
+
+
+def _query_answer(query: str) -> overpy.Result:
+    """
+    Waits for a response from overpy until it gets a result,
+    if it catches an exception exceeding the wait time
+    starts the query again
+    :param query: Query to overpy
+    :return: overpy.Result
+    """
+    while True:
+        try:
+            query_result = API.query(query)
+        except OverpassTooManyRequests:
+            logging.warning("So many requests, but query still running")
+            time.sleep(SHORT_BREAK)
+            continue
+        except OverpassGatewayTimeout:
+            logging.warning("Gateway Timeout, query is reload")
+            time.sleep(LONG_BREAK)
+            continue
+        return query_result
