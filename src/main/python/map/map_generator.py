@@ -1,5 +1,5 @@
 from src.main.python.tree.tree import KdTree
-from src.main.python.map.queries import query_by_reserved, query_by_name
+from src.main.python.map.queries import query_by_reserved, query_by_name, get_reserved
 from src.main.python.map.map_initializer import pure_custom_map
 from itertools import zip_longest
 from typing import Union, Tuple
@@ -36,6 +36,10 @@ class Map:
         self._points_obj = None
         self._tree = KdTree()
         self._user_input = None
+        self._current_zoom = None
+
+    def set_zoom(self, zoom: int):
+        self._current_zoom = zoom
 
     def pure_map(self) -> folium.Map:
         """
@@ -57,7 +61,7 @@ class Map:
         query_res = query_by_name(name, start_point, end_point)
         self._user_input = name
 
-        return self._build_map_by_query(query_res)
+        return self._build_map_by_query(query_res, start_point, end_point)
 
     def map_by_reserved(self, reserved_type: str, start_point: POINT, end_point: POINT) -> folium.Map:
         """
@@ -70,7 +74,7 @@ class Map:
         query_res = query_by_reserved(reserved_type, start_point, end_point)
         self._user_input = reserved_type
 
-        return self._build_map_by_query(query_res)
+        return self._build_map_by_query(query_res, start_point, end_point)
 
     def find_closest(self, pivot: POINT) -> Union[folium.Map, None]:
         """
@@ -103,15 +107,21 @@ class Map:
 
         return self._map
 
-    def _build_map_by_query(self, query: overpy.Result) -> folium.Map:
+    def get_reserved_queries(self) -> list:
+        return get_reserved()
+
+    def _build_map_by_query(self, query: overpy.Result, start_point: POINT, end_point: POINT) -> folium.Map:
         """
         Builds a map, based on the result of the overpy.Result query
         :param query: Query result of overpy
         :return: New generated map
         """
-        self._map = pure_custom_map()
-
         self._points_obj = _get_points(query)
+
+        location = [(end_point[0] + start_point[0]) / 2, (end_point[1] + start_point[1]) / 2]
+
+        self._map = pure_custom_map(location=location, zoom=self._current_zoom)
+
         for point_obj in self._points_obj:
             point_data = _get_html_point_info(point_obj[2])
 
@@ -135,7 +145,7 @@ class Map:
         :param trigger_point: The point to be marked in a special way
         :return: New generated map
         """
-        self._map = pure_custom_map()
+        self._map = pure_custom_map(location=trigger_point, zoom=self._current_zoom)
 
         for point_obj in self._points_obj:
             point_data = _get_html_point_info(point_obj[2])

@@ -2,6 +2,7 @@ pyvenv.cfg
 Scripts
 .idea
 
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -131,3 +132,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+/src/main/python/ui/loading.gif
