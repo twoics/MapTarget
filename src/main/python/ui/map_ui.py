@@ -31,6 +31,7 @@ def _js_handler(js_string: str) -> tuple:
 
 class WebEnginePage(QWebEnginePage):
     item_drawn = QtCore.pyqtSignal(tuple)
+    zoom_changed = QtCore.pyqtSignal(int)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -40,7 +41,8 @@ class WebEnginePage(QWebEnginePage):
         self.item_drawn.emit(_js_handler(p_str))
 
     def javaScriptConsoleMessage(self, level, msg, line, sourceID):
-        pass
+        if level == 0:
+            self.zoom_changed.emit(int(msg))
 
 
 class MapUI(QtCore.QObject):
@@ -132,6 +134,7 @@ class MapUI(QtCore.QObject):
         """
         self.page.item_drawn.connect(self._item_drawn)
         self.refresh_map.connect(self._refresh_map)
+        self.page.zoom_changed.connect(self.generator.set_zoom)
 
     def _refresh_map(self):
         """
