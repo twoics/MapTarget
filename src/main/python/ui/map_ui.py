@@ -92,6 +92,7 @@ class MapUI(QtCore.QObject):
         :param query: Reserved type by which to find objects
         :return: None
         """
+        
         if self.rect_points is None:
             self.search_done.emit()
             self.some_error.emit(EMPTY_AREA_WARNING)
