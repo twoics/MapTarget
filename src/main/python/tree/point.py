@@ -27,7 +27,8 @@ class Point:
             if other.x == self._x and other.y == self._y:
                 return True
             return False
-        # Else compare as object
+        # Else compare as object, always false
+        return False
 
     @property
     def x(self) -> float:

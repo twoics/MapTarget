@@ -1,32 +1,35 @@
 """
 Module implementing the k-d tree
 """
+# Standard library import
+from typing import Union, Tuple, List
+import math
 
-from typing import Union, Tuple
+# Local application imports
 from .point import Point
 from .node import Node
-from .auxiliary_func import unpack, nearest_node, euclidean_distance_node, sphere_distance, nearest_node_map
-
-INIT_TREE = Tuple[Tuple[Union[float, int], Union[float, int], Union[dict, None]], ...]
-POINT = Tuple[Union[float, int], Union[float, int]]
 
 
 class KdTree:
     """
     The class that implements KD tree
     """
+    INIT_TREE = Tuple[Tuple[Point, Union[dict, None]], ...]
 
-    def __init__(self, init_nodes: INIT_TREE = None):
+    # Since this tree was built for the map, the space is two-dimensional
+    DIMENSION = 2
+
+    def __init__(self, init_data: INIT_TREE = None):
         """
-        Builds a k-d tree based on the tuple of points
-        :param init_nodes: Tuple with points and data by which to build a tree
+        Builds a k-d tree based on the tuple of Points and Data
+        :param init_data: Tuple with points and data by which to build a tree
         """
         self._nodes_in_area = []
-        self._dimension = 2  # Since this tree was built for the map, the space is two-dimensional
+
         self._output_str = ""
 
         # Build tree if init nodes is not None
-        self._root_node = self._build_tree(unpack(init_nodes)) if init_nodes is not None else None
+        self._root_node = self._build_tree(self.unpack(init_data)) if init_data is not None else None
 
     def __str__(self):
         self._output_str = ""
@@ -39,28 +42,26 @@ class KdTree:
         """
         return self._root_node
 
-    def insert(self, x_cord: Union[int, float], y_cord: Union[int, float], data: dict = None) -> None:
+    def insert(self, point: Point, data: dict = None) -> None:
         """
-        Insert node with x,y coordinates into k-d tree
-        :param x_cord: The x-axis coordinate of the node
-        :param y_cord: The y-axis coordinate of the node
-        :param data: Data stored by the node
+        Insert node with Point coordinates into k-d tree
+        :param point: Point to insert
+        :param data: Data to set by the node
         :return: None
         """
-        node = Node((x_cord, y_cord), data=data)
+        node = Node(point, data=data)
         if self._root_node:
             self._add(node, self._root_node)
         else:
             self._root_node = node
 
-    def remove(self, x_cord: Union[int, float], y_cord: Union[int, float]) -> None:
+    def remove(self, point: Point) -> None:
         """
-        Removes a node with x,y coordinates from the k-d tree
-        :param x_cord: The x-axis coordinate of the node
-        :param y_cord: The y-axis coordinate of the node
+        Removes a node with point coordinates from the k-d tree
+        :param point: Point to delete
         :return: None
         """
-        node = Node((x_cord, y_cord))
+        node = Node(point)
         if node is None or self._root_node is None:
             return
         elif self._root_node.left_child is None and self._root_node.right_child is None and node.point == \
@@ -69,78 +70,53 @@ class KdTree:
         else:
             self._del(node, self._root_node)
 
-    def check_entry(self, start_point: POINT, end_point: POINT) -> list:
+    def closest_node(self, point: Point) -> Union[Node, None]:
         """
-        Outputs a list of nodes that are included in the area from start_point to end_point
+        Searches for the nearest node of the point
+        :param point: Pivot point
+        :return: Nearest Point
+        """
+        return self._closest_node(self._root_node, point)
+
+    def check_entry(self, start_point: Point, end_point: Point) -> list:
+        """
+        Outputs a list of nodes that are included in
+        the area from start_point to end_point
         :param start_point: First point
         :param end_point: Second point
         :return: List with nodes
         """
         self._nodes_in_area.clear()
 
-        point_1 = Point(start_point[0], start_point[1])
-        point_2 = Point(end_point[0], end_point[1])
-
-        if point_1.x > point_2.x or point_1.y > point_2.y:
+        if start_point.x > end_point.x or start_point.y > end_point.y:
             raise ValueError("First point must be less then second")
-        self._entry_field(point_1, point_2, self._root_node)
+        self._entry_field(start_point, end_point, self._root_node)
         return self._nodes_in_area
 
-    def rebuild_tree(self, init_nodes: INIT_TREE) -> Union[Node, None]:
+    def rebuild_tree(self, init_data: INIT_TREE) -> Union[Node, None]:
         """
         Rebuild KD tree by points
-        :param init_nodes: Tuple with points and data by which to build a tree
+        :param init_data: Tuple with points and data by which to build a tree
         :return: Root Node of KD-tree
         """
-        self._root_node = self._build_tree(unpack(init_nodes))
+        nodes = self.unpack(init_data)
+        self._root_node = self._build_tree(nodes)
         return self._root_node
 
-    def closest_node(self, point_x: Union[int, float], point_y: Union[int, float]) -> Union[Node, None]:
+    def _node_distance(self, node_1: Node, node_2: Node) -> float:
         """
-        Searches for the nearest node in a two-dimensional plane with x- and y-axes
-        :param point_x: The x-coordinate of the point
-        :param point_y: The y-coordinate of the point
-        :return: Nearest Point
+        Calculate euclidean distance by 2 points
+        :param node_1: First point
+        :param node_2: Second point
+        :return: Euclidean distance
         """
-        pivot = Point(point_x, point_y)
-        return self._closest_node(self._root_node, pivot)
+        x1, y1 = node_1.point.x, node_1.point.y
+        x2, y2 = node_2.point.x, node_2.point.y
 
-    def closest_node_map(self, latitude: Union[int, float], longitude: Union[int, float]) -> Union[Node, None]:
-        """
-        Searches for the nearest node on the map, at a point whose coordinates are given in latitude and longitude
-        :param latitude: Latitude of the point for which you need to find the closest node
-        :param longitude: Longitude of the point for which you need to find the closest node
-        :return: Nearest node or None
-        """
-        pivot = Point(latitude, longitude)
-        return self._closest_node_map(self._root_node, pivot)
+        delta_x = x1 - x2
+        delta_y = y1 - y2
 
-    def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
-        """
-        Iterated by nodes, depending on their location, relative to the area, goes
-        to the left or right subtree, otherwise if the area intersects the dimension of current node,
-        checks if the node is in the area, then iterates through both subtrees
-        :param start_pos: Start area position
-        :param end_pos: End area position
-        :param node: Current Node
-        :param depth: Tree depth
-        :return: None
-        """
-        if node is None:
-            return None
-
-        axis = depth % self._dimension
-        point = node.point
-
-        if point[axis] > start_pos[axis] and point[axis] > end_pos[axis]:  # Area left or down
-            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
-        elif point[axis] < start_pos[axis] and point[axis] < end_pos[axis]:  # Area right or up
-            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
-        else:  # Area across axis
-            if start_pos.x <= point.x <= end_pos.x and start_pos.y <= point.y <= end_pos.y:  # Point in area
-                self._nodes_in_area.append(node)
-            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
-            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+        return math.sqrt(delta_x ** 2 + delta_y ** 2)
 
     def _add(self, node: Node, root: Node, depth=0) -> None:
         """
@@ -153,7 +129,7 @@ class KdTree:
         if root is None:
             return None
 
-        axis = depth % self._dimension
+        axis = depth % self.DIMENSION
         point = node.point
 
         if point[axis] < root.point[axis]:
@@ -179,7 +155,7 @@ class KdTree:
         if curr_root is None:
             return None
 
-        dimension = dimension % self._dimension
+        dimension = dimension % self.DIMENSION
 
         if del_node.point == curr_root.point:
 
@@ -214,7 +190,7 @@ class KdTree:
 
     def _closest_node(self, root: Node, point: Point, depth=0) -> Union[Node, None]:
         """
-        Calculate the closest point to pivot
+        Calculate the closest node to pivot
         :param root: Root node of K-d tree
         :param point: The point to which we are looking for the closest
         :param depth: Recursive parameter
@@ -224,7 +200,7 @@ class KdTree:
         if root is None:
             return None
 
-        axis = depth % self._dimension
+        axis = depth % self.DIMENSION
 
         if point[axis] < root.point[axis]:
             next_branch = root.left_child
@@ -233,83 +209,71 @@ class KdTree:
             next_branch = root.right_child
             opposite_branch = root.left_child
 
-        best = nearest_node(point,
-                            self._closest_node(next_branch,
-                                               point,
-                                               depth + 1),
-                            root)
+        best = self._nearest_node(point,
+                                  self._closest_node(
+                                      next_branch,
+                                      point,
+                                      depth + 1
+                                  ),
+                                  root)
 
-        node_point = Node((point.x, point.y))
+        node_point = Node(Point(point.x, point.y))
 
         # If distance from pivot to 'best' node bigger than module by distance(perpendicular)
         # from pivot to space section -> check opposite branch (maybe there is a node closer)
-        if euclidean_distance_node(node_point, best) > abs(point[axis] - root.point[axis]):
-            best = nearest_node(point,
-                                self._closest_node(opposite_branch,
-                                                   point,
-                                                   depth + 1),
-                                best)
+        if self._node_distance(node_point, best) > abs(point[axis] - root.point[axis]):
+            best = self._nearest_node(point,
+                                      self._closest_node(
+                                          opposite_branch,
+                                          point,
+                                          depth + 1
+                                      ),
+                                      best
+                                      )
 
         return best
 
-    def _closest_node_map(self, root: Node, point: Point, depth=0) -> Union[Node, None]:
+    def _nearest_node(self, pivot: Point, node_1: Union[Node, None], node_2: [Node, None]) -> Union[Node, None]:
         """
-        Calculate the closest point to pivot on map
-        :param root: Root node of K-d tree
-        :param point: The point to which we are looking for the closest
-        :param depth: Recursive parameter
-        :return: Closest Point
+        Returns the node that is closer to the pivot
+        :param pivot: The point to which we are looking for the closest
+        :param node_1: First node
+        :param node_2: Second node
+        :return: Nearest node to pivot
         """
+        if node_1 is None:
+            return node_2
 
-        if root is None:
-            return None
+        if node_2 is None:
+            return node_1
 
-        axis = depth % self._dimension
+        pivot_node = Node(Point(pivot.x, pivot.y))
 
-        if point[axis] < root.point[axis]:
-            next_branch = root.left_child
-            opposite_branch = root.right_child
+        distance_1 = self._node_distance(pivot_node, node_1)
+        distance_2 = self._node_distance(pivot_node, node_2)
+
+        if distance_1 < distance_2:
+            return node_1
         else:
-            next_branch = root.right_child
-            opposite_branch = root.left_child
+            return node_2
 
-        best = nearest_node_map(point,
-                                self._closest_node_map(next_branch,
-                                                   point,
-                                                   depth + 1),
-                                root)
-
-        node_point = Node((point.x, point.y))
-
-        # If distance from pivot to 'best' node bigger than module by distance(perpendicular)
-        # from pivot to space section -> check opposite branch (maybe there is a node closer)
-        if sphere_distance(node_point.point[0], node_point.point[1], best.point[0], best.point[1]) > abs(
-                point[axis] - root.point[axis]):
-            best = nearest_node_map(point,
-                                    self._closest_node_map(opposite_branch,
-                                                       point,
-                                                       depth + 1),
-                                    best)
-
-        return best
-
-    def _build_tree(self, points_list: list, depth=0, parent: Node = None) -> Union[Node, None]:
+    def _build_tree(self, nodes_list: List[Node], depth=0, parent: Node = None) -> Union[Node, None]:
         """
         Builds a k-d tree
-        :param points_list: The list of points from which to build the tree
+        :param nodes_list: The list of points from which to build the tree
         :param depth: Recursive parameter
         :param parent: Recursive parameter
         :return:
         """
-        length = len(points_list)
+        length = len(nodes_list)
 
         if length <= 0:
             return None
 
-        axis = depth % self._dimension
+        axis = depth % self.DIMENSION
 
         # Sort point by axis (by 'x' or 'y' )
-        sorted_points = [node for node in sorted(points_list, key=lambda node: node.point[axis])]
+        sorted_points = [node for node in sorted(nodes_list, key=lambda node: node.point[axis])]
 
         root = sorted_points[length // 2]
 
@@ -329,6 +293,33 @@ class KdTree:
 
         return root
 
+    def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
+        """
+        Iterated by nodes, depending on their location, relative to the area, goes
+        to the left or right subtree, otherwise if the area intersects the dimension of current node,
+        checks if the node is in the area, then iterates through both subtrees
+        :param start_pos: Start area position
+        :param end_pos: End area position
+        :param node: Current Node
+        :param depth: Tree depth
+        :return: None
+        """
+        if node is None:
+            return None
+
+        axis = depth % self.DIMENSION
+        point = node.point
+
+        if point[axis] > start_pos[axis] and point[axis] > end_pos[axis]:  # Area left or down
+            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
+        elif point[axis] < start_pos[axis] and point[axis] < end_pos[axis]:  # Area right or up
+            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+        else:  # Area across axis
+            if start_pos.x <= point.x <= end_pos.x and start_pos.y <= point.y <= end_pos.y:  # Point in area
+                self._nodes_in_area.append(node)
+            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
+            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+
     def _minimum_node(self, root: Node, axis_target: int, axis_current: int) -> Union[Node, None]:
         """
         Find node with minimum item in Kd-tree by axis_target
@@ -342,10 +333,10 @@ class KdTree:
         if axis_target == axis_current:
             if root.left_child is None:
                 return root
-            return self._minimum_node(root.left_child, axis_target, (axis_current + 1) % self._dimension)
+            return self._minimum_node(root.left_child, axis_target, (axis_current + 1) % self.DIMENSION)
 
-        right_min = self._minimum_node(root.right_child, axis_target, (axis_current + 1) % self._dimension)
-        left_min = self._minimum_node(root.left_child, axis_target, (axis_current + 1) % self._dimension)
+        right_min = self._minimum_node(root.right_child, axis_target, (axis_current + 1) % self.DIMENSION)
+        left_min = self._minimum_node(root.left_child, axis_target, (axis_current + 1) % self.DIMENSION)
         result = root
 
         if right_min is not None and right_min.point[axis_target] < result.point[axis_target]:
@@ -365,3 +356,16 @@ class KdTree:
             self._tree_to_str(node.right_child, level + 1)
             self._output_str += (' ' * 8 * level + '->' + str(node.point) + "\n")
             self._tree_to_str(node.left_child, level + 1)
+
+    @staticmethod
+    def unpack(data: INIT_TREE) -> List[Node]:
+        """
+        Unpack INIT_TREE to Node list
+        :param data: Init tuple with points
+        :return: Nodes List
+        """
+        nodes = []
+        for tup in data:
+            new_node = Node(tup[0], data=tup[1])
+            nodes.append(new_node)
+        return nodes

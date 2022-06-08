@@ -2,10 +2,8 @@
 Module implementing the node of k-d tree
 """
 
+# Local application imports
 from .point import Point
-from typing import Tuple, Union
-
-POINT = Tuple[Union[float, int], Union[float, int]]
 
 
 class Node:
@@ -13,10 +11,8 @@ class Node:
     Class implementing the Node of k-d tree
     """
 
-    def __init__(self, init_point: POINT, data=None):
-        if len(init_point) != 2:
-            raise ValueError("The point must have 2 axes - x and y")
-        self._point = Point(init_point[0], init_point[1])
+    def __init__(self, init_point: Point, data=None):
+        self._point = init_point
         self._left_child = None
         self._right_child = None
         self._data = data
