@@ -1,7 +1,7 @@
+import unittest
 from src.main.python.tree.point import Point
 from src.main.python.tree.node import Node
 from src.main.python.tree.tree import KdTree
-import unittest
 
 DATA_SHORT = (
     (Point(5, 4), None),
