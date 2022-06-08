@@ -2,6 +2,7 @@
 Module implementing the node of k-d tree
 """
 
+# Local application imports
 from .point import Point
 
 

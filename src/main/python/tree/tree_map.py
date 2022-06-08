@@ -1,4 +1,7 @@
+# Standard library import
 import math
+
+# Local application imports
 from .tree import KdTree
 from .node import Node
 
