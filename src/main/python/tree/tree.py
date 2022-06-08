@@ -3,7 +3,6 @@ Module implementing the k-d tree
 """
 # Standard library import
 from typing import Union, Tuple, List
-import math
 
 # Local application imports
 from .point import Point
@@ -110,13 +109,9 @@ class KdTree:
         :param node_2: Second point
         :return: Euclidean distance
         """
-        x1, y1 = node_1.point.x, node_1.point.y
-        x2, y2 = node_2.point.x, node_2.point.y
-
-        delta_x = x1 - x2
-        delta_y = y1 - y2
-
-        return math.sqrt(delta_x ** 2 + delta_y ** 2)
+        point_1 = node_1.point
+        point_2 = node_2.point
+        return point_1.euclidean_distance(point_2)
 
     def _add(self, node: Node, root: Node, depth=0) -> None:
         """

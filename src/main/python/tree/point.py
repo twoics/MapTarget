@@ -1,6 +1,8 @@
 """
 Module implementing the point of node location
 """
+# Standard library import
+import math
 
 
 class Point:
@@ -23,12 +25,25 @@ class Point:
         raise Exception("Only 0 or 1 expected")
 
     def __eq__(self, other):
-        if isinstance(other, Point):
-            if other.x == self._x and other.y == self._y:
-                return True
-            return False
-        # Else compare as object, always false
+        if not isinstance(other, Point):
+            raise TypeError("Objects to be compared with Point must be of type Point")
+
+        if other.x == self._x and other.y == self._y:
+            return True
         return False
+
+    def euclidean_distance(self, point) -> float:
+        """
+        Calculates the Euclidean distance between two points
+        :param point: Other point
+        :return: Euclidean distance
+        """
+        if not isinstance(point, Point):
+            raise TypeError("point must be of type Point")
+
+        delta_x = self.x - point.x
+        delta_y = self._y - point.y
+        return math.sqrt(delta_x ** 2 + delta_y ** 2)
 
     @property
     def x(self) -> float:
