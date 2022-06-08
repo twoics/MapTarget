@@ -4,8 +4,7 @@ from .point import Point
 
 import math
 
-INIT_TREE = Tuple[Tuple[Union[float, int], Union[float, int], Union[dict, None]], ...]
-POINT = Tuple[Union[float, int], Union[float, int]]
+INIT_TREE = Tuple[Tuple[Point, Union[dict, None]], ...]
 GEOGRAPHIC_COORDINATE = Union[float, int]
 
 EARTH_RADIUS = 6372795
@@ -20,7 +19,7 @@ def unpack(data: INIT_TREE) -> List[Node]:
     """
     nodes = []
     for tup in data:
-        new_node = Node((tup[0], tup[1]), data=tup[2])
+        new_node = Node(tup[0], data=tup[1])
         nodes.append(new_node)
     return nodes
 
@@ -39,7 +38,7 @@ def nearest_node(pivot: Point, node_1: Union[Node, None], node_2: [Node, None]) 
     if node_2 is None:
         return node_1
 
-    pivot_node = Node((pivot.x, pivot.y))
+    pivot_node = Node(Point(pivot.x, pivot.y))
 
     distance_1 = euclidean_distance_node(pivot_node, node_1)
     distance_2 = euclidean_distance_node(pivot_node, node_2)
@@ -112,7 +111,7 @@ def nearest_node_map(pivot: Point, node_1: Union[Node, None], node_2: [Node, Non
     if node_2 is None:
         return node_1
 
-    pivot_node = Node((pivot.x, pivot.y))
+    pivot_node = Node(Point(pivot.x, pivot.y))
 
     distance_1 = sphere_distance(pivot_node.point[0], pivot_node.point[1], node_1.point[0], node_1.point[1])
     distance_2 = sphere_distance(pivot_node.point[0], pivot_node.point[1], node_2.point[0], node_2.point[1])
