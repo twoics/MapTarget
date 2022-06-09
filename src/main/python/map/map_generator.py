@@ -3,7 +3,8 @@ from src.main.python.tree.tree_map import KdTreeMap
 from src.main.python.map.queries import query_by_reserved, query_by_name, get_reserved
 from src.main.python.map.map_initializer import pure_custom_map
 from itertools import zip_longest
-from typing import Union, Tuple
+from typing import Union, Tuple, List
+from .data_point import DataPoint
 import folium
 import overpy
 
@@ -34,7 +35,7 @@ ICONS = {
 
 class Map:
     def __init__(self):
-        # [ (Point(1,1), {"data_1": 1}), (Point(2,2), {"data_2": 2}) ]
+        # Data points is: [ DataPoint(), DataPoint()]
         self._data_points_list = None
         self._tree = KdTreeMap()
         self._query = None
@@ -86,7 +87,9 @@ class Map:
         """
         if not self._data_points_list:
             return None
-        self._tree.rebuild_tree(tuple(self._data_points_list))
+        packed_data = pack_answer(self._data_points_list)
+        self._tree.rebuild_tree(packed_data)
+
         closest = self._tree.closest_node(pivot)
 
         closest_point = closest.point
@@ -139,8 +142,8 @@ class Map:
         new_map = pure_custom_map(location=location, zoom=self._current_zoom)
 
         for point_obj in self._data_points_list:
-            point_data = _get_html_point_info(point_obj[1])
-            point = point_obj[0]
+            point_data = _get_html_point_info(point_obj.data)
+            point = point_obj.point
 
             folium.Marker(
                 # Set cords
@@ -164,15 +167,27 @@ def _unpack_query_answer(answer_query: overpy.Result) -> list:
     :param answer_query: Query Result from overpy
     :return: List With points and data: [(latitude_1, longitude_1, {data_1}), (latitude_2, longitude_2, {data_2})]
     """
-    points_list = []
+    data_points_list = []
     for node, way, rel in zip_longest(answer_query.nodes, answer_query.ways, answer_query.relations):
         if rel:
-            points_list.append((Point(float(rel.center_lat), float(rel.center_lon)), rel.tags))
+            data_points_list.append(
+                DataPoint(
+                    Point(float(rel.center_lat), float(rel.center_lon)), rel.tags
+                )
+            )
         if way:
-            points_list.append((Point(float(way.center_lat), float(way.center_lon)), way.tags))
+            data_points_list.append(
+                DataPoint(
+                    Point(float(way.center_lat), float(way.center_lon)), way.tags
+                )
+            )
         if node:
-            points_list.append((Point(float(node.lat), float(node.lon)), node.tags))
-    return points_list
+            data_points_list.append(
+                DataPoint(
+                    Point(float(node.lat), float(node.lon)), node.tags
+                )
+            )
+    return data_points_list
 
 
 def _get_html_point_info(point_data: dict) -> str:
@@ -182,3 +197,10 @@ def _get_html_point_info(point_data: dict) -> str:
     :return: HTML as string
     """
     return f"""Name: {point_data.get('name', 'n/a')}<br>Amenity: {point_data.get('amenity', 'n/a')}"""
+
+
+def pack_answer(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
+    result = []
+    for item in unpacked_answer:
+        result.append(item.tuple_data)
+    return tuple(result)
