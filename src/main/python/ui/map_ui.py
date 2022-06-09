@@ -55,7 +55,7 @@ class MapUI(QtCore.QObject):
 
     def __init__(self):
         super().__init__()
-        self.marker_points = None
+        self.marker_point = None
         self.rect_points = None
         self.mapa = None
 
@@ -74,11 +74,11 @@ class MapUI(QtCore.QObject):
         to the pivot, marks it with a special color, and updates the map
         :return: None
         """
-        if self.marker_points is None:
+        if self.marker_point is None:
             self.some_error.emit(EMPTY_MARKER)
             return
 
-        result = self.generator.find_closest(self.marker_points)
+        result = self.generator.find_closest(self.marker_point)
         if result is None:
             self.some_error.emit(NULL_POINTS)
             return
@@ -92,16 +92,18 @@ class MapUI(QtCore.QObject):
         :param query: Reserved type by which to find objects
         :return: None
         """
-        
+
         if self.rect_points is None:
             self.search_done.emit()
             self.some_error.emit(EMPTY_AREA_WARNING)
             return
+        #
+        # if query in self.generator.get_reserved_queries():
+        #     self.mapa = self.generator.map_by_reserved(query, self.rect_points[0], self.rect_points[2])
+        # else:
+        #     self.mapa = self.generator.map_by_name(query, self.rect_points[0], self.rect_points[2])
 
-        if query in self.generator.get_reserved_queries():
-            self.mapa = self.generator.map_by_reserved(query, self.rect_points[0], self.rect_points[2])
-        else:
-            self.mapa = self.generator.map_by_name(query, self.rect_points[0], self.rect_points[2])
+        self.mapa = self.generator.generate_map(query, self.rect_points[0], self.rect_points[2])
 
         self.refresh_map.emit()
 
@@ -123,10 +125,10 @@ class MapUI(QtCore.QObject):
         """
         if data[0] == 'rectangle':
             self.rect_points = data[1:]
-            self.marker_points = None
+            self.marker_point = None
         else:
             self.rect_points = None
-            self.marker_points = data[1]
+            self.marker_point = data[1]
 
     def _init_signals(self) -> None:
         """
@@ -142,7 +144,7 @@ class MapUI(QtCore.QObject):
         Updates the map UI, on the current map
         :return: None
         """
-        self.marker_points = None
+        self.marker_point = None
         self.rect_points = None
 
         data = io.BytesIO()

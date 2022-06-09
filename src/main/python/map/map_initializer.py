@@ -1,4 +1,6 @@
 import folium
+from src.main.python.tree.point import Point
+
 from .web_parser import WebParser
 
 USER_LOCATION = [56.0140, 92.8563]
@@ -68,13 +70,14 @@ JAVA_SCRIPT = """
 """
 
 
-def pure_custom_map(location: list = None, zoom: int = None) -> folium.Map:
+# TODO FIX LOCATION
+def pure_custom_map(location: Point = None, zoom: int = None) -> folium.Map:
     """
     Creates a new custom folium map,
     with the ability to draw on it
     :return: Pure Folium map
     """
-    current_location = location if location else USER_LOCATION
+    current_location = location.points if location else USER_LOCATION
     current_zoom = zoom if zoom else STANDARD_ZOOM
 
     f_map = folium.Map(location=current_location,
