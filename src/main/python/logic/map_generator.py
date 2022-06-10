@@ -1,13 +1,13 @@
-from src.main.python.tree.point import Point
-from src.main.python.tree.tree_map import KdTreeMap
-from src.main.python.map.queries import query_by_reserved, query_by_name, get_reserved
-from src.main.python.map.map_constants import JAVA_SCRIPT, HTML
+from src.main.python.logic.tree.point import Point
+from src.main.python.logic.tree.tree_map import KdTreeMap
+from src.main.python.logic.map.queries import query_by_reserved, query_by_name, get_reserved
+from src.main.python.logic.map.map_constants import JAVA_SCRIPT, HTML
 from itertools import zip_longest
+from src.main.python.logic.map.web_parser import WebParser
 from typing import Union, Tuple, List
-from .data_point import DataPoint
+from src.main.python.logic.map.data_point import DataPoint
 import folium
 import overpy
-from .web_parser import WebParser
 
 MAP_POINT = Tuple[Union[float, int], Union[float, int], dict]
 

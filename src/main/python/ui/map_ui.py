@@ -1,6 +1,6 @@
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from PyQt5 import QtCore
-from src.main.python.map.map_generator import Map
+from src.main.python.logic.map_generator import Map
 import io
 
 EMPTY_AREA_WARNING = "Before searching for objects, you must first select the search area"
