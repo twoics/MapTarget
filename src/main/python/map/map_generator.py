@@ -1,12 +1,13 @@
 from src.main.python.tree.point import Point
 from src.main.python.tree.tree_map import KdTreeMap
 from src.main.python.map.queries import query_by_reserved, query_by_name, get_reserved
-from src.main.python.map.map_initializer import pure_custom_map
+from src.main.python.map.map_constants import JAVA_SCRIPT, HTML
 from itertools import zip_longest
 from typing import Union, Tuple, List
 from .data_point import DataPoint
 import folium
 import overpy
+from .web_parser import WebParser
 
 MAP_POINT = Tuple[Union[float, int], Union[float, int], dict]
 
@@ -34,12 +35,15 @@ ICONS = {
 # TODO Constant to JSON, create JSON connector
 
 class Map:
+    INIT_LOCATION = [56.0140, 92.8563]
+    STANDARD_ZOOM = 10
+
     def __init__(self):
-        # Data points is: [ DataPoint(), DataPoint()]
-        self._data_points_list = None
-        self._tree = KdTreeMap()
+        # [ DataPoint(), DataPoint()]
+        self._points_on_map = None
         self._query = None
-        self._current_zoom = None
+        self._tree = KdTreeMap()
+        self._current_zoom = self.STANDARD_ZOOM
 
     def set_zoom(self, zoom: int) -> None:
         """
@@ -56,8 +60,8 @@ class Map:
         Generate new Pure Map
         :return: Folium Map
         """
-        new_map = pure_custom_map()
-        self._data_points_list = None
+        new_map = self._pure_custom_map()
+        self._points_on_map = None
         return new_map
 
     def generate_map(self, query: str, start_point: tuple, end_point: tuple) -> folium.Map:
@@ -85,9 +89,9 @@ class Map:
         :param pivot: The point for which the nearest object is searched for
         :return: Modified map
         """
-        if not self._data_points_list:
+        if not self._points_on_map:
             return None
-        packed_data = pack_answer(self._data_points_list)
+        packed_data = self.pack_answer(self._points_on_map)
         self._tree.rebuild_tree(packed_data)
 
         closest = self._tree.closest_node(pivot)
@@ -123,26 +127,19 @@ class Map:
             query_res = query_by_reserved(query, start_point.points, end_point.points)
         else:
             query_res = query_by_name(query, start_point.points, end_point.points)
-        self._query = query
-        return self._build_map_by_query(query_res, start_point, end_point)
 
-    def _build_map_by_query(self, query: overpy.Result, start_point: Point, end_point: Point) -> folium.Map:
-        """
-        Builds a map, based on the result of the overpy.Result query
-        :param query: Query result of overpy
-        :return: New generated map
-        """
-        self._data_points_list = _unpack_query_answer(query)
+        self._query = query
+        self._points_on_map = self._unpack_query_answer(query_res)
 
         middle_point = start_point.middle_point(end_point)
         new_map = self._build(target_point=None, location=middle_point)
         return new_map
 
     def _build(self, target_point: Union[Point, None], location: Point) -> folium.Map:
-        new_map = pure_custom_map(location=location, zoom=self._current_zoom)
+        new_map = self._pure_custom_map(location=location, zoom=self._current_zoom)
 
-        for point_obj in self._data_points_list:
-            point_data = _get_html_point_info(point_obj.data)
+        for point_obj in self._points_on_map:
+            point_data = self._get_point_info(point_obj.data)
             point = point_obj.point
 
             folium.Marker(
@@ -159,48 +156,68 @@ class Map:
             ).add_to(new_map)
         return new_map
 
+    def _pure_custom_map(self, location: Point = None, zoom: int = None) -> folium.Map:
+        """
+        Creates a new custom folium map,
+        with the ability to draw on it
+        :return: Pure Folium map
+        """
+        current_location = location.points if location else self.INIT_LOCATION
+        current_zoom = zoom if zoom else self._current_zoom
 
-def _unpack_query_answer(answer_query: overpy.Result) -> list:
-    """
-    Returns a list of points that show the location
-    of an object on the map, by type of query
-    :param answer_query: Query Result from overpy
-    :return: List With points and data: [(latitude_1, longitude_1, {data_1}), (latitude_2, longitude_2, {data_2})]
-    """
-    data_points_list = []
-    for node, way, rel in zip_longest(answer_query.nodes, answer_query.ways, answer_query.relations):
-        if rel:
-            data_points_list.append(
-                DataPoint(
-                    Point(float(rel.center_lat), float(rel.center_lon)), rel.tags
+        f_map = folium.Map(location=current_location,
+                           zoom_start=current_zoom)
+
+        custom_html = WebParser(html=HTML)
+        custom_js = WebParser(script=JAVA_SCRIPT, args={'map': f_map.get_name()})
+
+        f_map.get_root().add_child(custom_html)
+        f_map.add_child(custom_js)
+
+        return f_map
+
+    @staticmethod
+    def _unpack_query_answer(answer_query: overpy.Result) -> list:
+        """
+        Returns a list of points that show the location
+        of an object on the map, by type of query
+        :param answer_query: Query Result from overpy
+        :return: Data Points list
+        """
+        data_points_list = []
+        for node, way, rel in zip_longest(answer_query.nodes, answer_query.ways, answer_query.relations):
+            if rel:
+                data_points_list.append(
+                    DataPoint(
+                        Point(float(rel.center_lat), float(rel.center_lon)), rel.tags
+                    )
                 )
-            )
-        if way:
-            data_points_list.append(
-                DataPoint(
-                    Point(float(way.center_lat), float(way.center_lon)), way.tags
+            if way:
+                data_points_list.append(
+                    DataPoint(
+                        Point(float(way.center_lat), float(way.center_lon)), way.tags
+                    )
                 )
-            )
-        if node:
-            data_points_list.append(
-                DataPoint(
-                    Point(float(node.lat), float(node.lon)), node.tags
+            if node:
+                data_points_list.append(
+                    DataPoint(
+                        Point(float(node.lat), float(node.lon)), node.tags
+                    )
                 )
-            )
-    return data_points_list
+        return data_points_list
 
+    @staticmethod
+    def _get_point_info(point_data: dict) -> str:
+        """
+        Return HTML for Marker PopUP
+        :param point_data: Tags that contain a point
+        :return: HTML as string
+        """
+        return f"""Name: {point_data.get('name', 'n/a')}<br>Amenity: {point_data.get('amenity', 'n/a')}"""
 
-def _get_html_point_info(point_data: dict) -> str:
-    """
-    Return HTML for Marker PopUP
-    :param point_data: Tags that contain a point
-    :return: HTML as string
-    """
-    return f"""Name: {point_data.get('name', 'n/a')}<br>Amenity: {point_data.get('amenity', 'n/a')}"""
-
-
-def pack_answer(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
-    result = []
-    for item in unpacked_answer:
-        result.append(item.tuple_data)
-    return tuple(result)
+    @staticmethod
+    def pack_answer(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
+        result = []
+        for item in unpacked_answer:
+            result.append(item.tuple_data)
+        return tuple(result)
