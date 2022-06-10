@@ -45,6 +45,21 @@ class Point:
         delta_y = self._y - point.y
         return math.sqrt(delta_x ** 2 + delta_y ** 2)
 
+    def middle_point(self, other_point):
+        """
+        Find middle between current and other point
+        :param other_point: Other point
+        :return: Middle Point
+        """
+        if not isinstance(other_point, Point):
+            raise TypeError("other_point must be of type Point")
+
+        return Point((other_point.x + self.x) / 2, (other_point.y + self.y) / 2)
+
+    @property
+    def points(self) -> tuple:
+        return self._x, self._y
+
     @property
     def x(self) -> float:
         return self._x
