@@ -7,7 +7,7 @@ from src.main.python.logic.point import Point
 class IMap(ABC):
 
     @abstractmethod
-    def set_zoom(self, zoom: int) -> None:
+    def update_current_zoom(self, zoom: int) -> None:
         """
         Set zoom value
         This value is used when reloading

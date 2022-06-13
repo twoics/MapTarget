@@ -1,5 +1,3 @@
-import time
-
 from ..logic.map_interface import IMap
 from ..ui.view_interface import IView
 from ..logic.point import Point
@@ -17,13 +15,11 @@ class Controller(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def pure_map(self) -> None:
-        print("Pure")
         new_map = self._map.pure_map()
         self._view.set_map(new_map)
 
     @QtCore.pyqtSlot(str, tuple, tuple)
     def all_objects_map(self, query: str, start_point: tuple, end_point: tuple):
-        print("ALL")
         start = Point(start_point[0], start_point[1])
         end = Point(end_point[0], end_point[1])
         new_map = self._map.find_objects(query, start, end)
@@ -31,15 +27,13 @@ class Controller(QtCore.QObject):
 
     @QtCore.pyqtSlot(tuple)
     def nearest_object_map(self, point: tuple):
-        print("Nearest")
         pivot = Point(point[0], point[1])
         new_map = self._map.nearest_object(pivot)
         self._view.set_map(new_map)
 
     @QtCore.pyqtSlot(int)
     def zoom_changed(self, value: int) -> None:
-        print("Zoom")
-        self._map.set_zoom(value)
+        self._map.update_current_zoom(value)
 
     def init_slots(self) -> None:
         all_objects_request = self._view.all_object_request()

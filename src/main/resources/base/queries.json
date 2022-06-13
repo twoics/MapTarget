@@ -1,0 +1,20 @@
+{
+  "standard_queries": {
+    "cafe": ["amenity", "cafe"],
+    "fast_food": ["amenity", "fast_food"],
+    "restaurant": ["amenity", "restaurant"],
+    "bar": ["amenity", "bar"],
+    "cinema": ["amenity", "cinema"],
+    "fitness": ["leisure", "fitness_centre"],
+    "museum": ["tourism", "museum"],
+    "library": ["amenity", "library"],
+    "supermarket": ["shop", "supermarket"],
+    "clothes": ["shop", "clothes"],
+    "mall": ["shop", "mall"],
+    "electronic": ["shop", "electronics"],
+    "hospital": ["amenity", "hospital"],
+    "fuel": ["amenity", "fuel"],
+    "hotel": ["tourism", "hotel"],
+    "pharmacy": ["amenity", "pharmacy"]
+  }
+}

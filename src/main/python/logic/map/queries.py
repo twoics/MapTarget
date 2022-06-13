@@ -1,5 +1,7 @@
 from typing import Tuple, Union, List
 from overpy.exception import OverpassTooManyRequests, OverpassGatewayTimeout
+from ...json_connector import JsonConnector
+
 import overpy
 import time
 import logging
@@ -11,24 +13,9 @@ API = overpy.Overpass()
 SHORT_BREAK = 1
 LONG_BREAK = 5
 
-RESERVED_QUERY = {
-    'cafe': ["amenity", "cafe"],
-    'fast_food': ["amenity", "fast_food"],
-    'restaurant': ["amenity", "restaurant"],
-    'bar': ["amenity", "bar"],
-    'cinema': ["amenity", "cinema"],
-    'fitness': ["leisure", "fitness_centre"],
-    'museum': ["tourism", "museum"],
-    'library': ["amenity", "library"],
-    'supermarket': ["shop", "supermarket"],
-    'clothes': ["shop", "clothes"],
-    'mall': ["shop", "mall"],
-    'electronic': ["shop", "electronics"],
-    'hospital': ["amenity", "hospital"],
-    'fuel': ["amenity", "fuel"],
-    'hotel': ["tourism", "hotel"],
-    'pharmacy': ["amenity", "pharmacy"]
-}
+json_connector = JsonConnector()
+
+RESERVED_QUERY = json_connector.get_standard_queries()
 
 
 def query_by_name(name: str, start_point: POINT, end_point: POINT) -> overpy.Result:
