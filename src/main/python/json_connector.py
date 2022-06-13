@@ -9,12 +9,6 @@ class JsonConnector:
     def get_standard_queries(self) -> dict:
         return self.get_data("queries.json", "standard_queries")
 
-    def get_html(self) -> dict:
-        return self.get_data("web.json", "HTML")
-
-    def get_js(self) -> dict:
-        return self.get_data("web.json", "JS")
-
     @staticmethod
     def get_data(file: str, field: str):
         try:

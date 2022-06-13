@@ -1,6 +1,6 @@
 from src.main.python.logic.point import Point
 from src.main.python.logic.tree.tree_map import KdTreeMap
-from src.main.python.logic.map.queries import query_by_reserved, query_by_name, get_reserved
+from src.main.python.logic.map.queries import Query
 from src.main.python.logic.map.web_source import JAVA_SCRIPT, HTML
 from itertools import zip_longest
 from src.main.python.logic.map.web_parser import WebParser
@@ -23,10 +23,11 @@ class Map(IMap):
     def __init__(self):
         # [ DataPoint(), DataPoint()]
         self._points_on_map = None
-        self._query = None
+        self._user_query = None
         self._tree = KdTreeMap()
-        self._current_zoom = self.STANDARD_ZOOM
+        self._query = Query()
 
+        self._current_zoom = self.STANDARD_ZOOM
         # Icons for standard requests
         json_connector = JsonConnector()
         self._standard_icons = json_connector.get_icons()
@@ -61,12 +62,12 @@ class Map(IMap):
         :param end_point:
         :return:
         """
-        if query in get_reserved():
-            query_res = query_by_reserved(query, start_point.points, end_point.points)
+        if query in self._query.get_reserved():
+            query_res = self._query.query_by_reserved(query, start_point.points, end_point.points)
         else:
-            query_res = query_by_name(query, start_point.points, end_point.points)
+            query_res = self._query.query_by_name(query, start_point.points, end_point.points)
 
-        self._query = query
+        self._user_query = query
         self._points_on_map = self._unpack_query_answer(query_res)
 
         middle_point = start_point.middle_point(end_point)
@@ -115,7 +116,7 @@ class Map(IMap):
                 # Set cords
                 point.points,
                 icon=folium.Icon(
-                    icon=self._standard_icons.get(self._query, DEFAULT_ICON),
+                    icon=self._standard_icons.get(self._user_query, DEFAULT_ICON),
                     # TODO COMMENT THIS
                     color='green' if target_point and target_point == point else 'blue',
                     prefix="fa"),
