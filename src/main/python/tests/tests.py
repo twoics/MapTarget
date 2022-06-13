@@ -1,5 +1,5 @@
 import unittest
-from src.main.python.logic.tree.point import Point
+from src.main.python.logic.point import Point
 from src.main.python.logic.tree.node import Node
 from src.main.python.logic.tree.tree import KdTree
 
