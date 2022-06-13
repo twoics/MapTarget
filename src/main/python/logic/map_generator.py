@@ -11,14 +11,11 @@ from .map_interface import IMap
 import folium
 import overpy
 
-MAP_POINT = Tuple[Union[float, int], Union[float, int], dict]
-
-DEFAULT_ICON = 'info-circle'
-
 
 class Map(IMap):
     INIT_LOCATION = [56.0140, 92.8563]
     STANDARD_ZOOM = 10
+    DEFAULT_ICON = 'info-circle'
 
     def __init__(self):
         # [ DataPoint(), DataPoint()]
@@ -97,7 +94,7 @@ class Map(IMap):
         folium.Marker(
             pivot.points,
             icon=folium.Icon(
-                icon=DEFAULT_ICON,
+                icon=self.DEFAULT_ICON,
                 prefix="fa",
                 color='red'),
             popup=f"<i>{'PIVOT'}</i>"
@@ -116,7 +113,7 @@ class Map(IMap):
                 # Set cords
                 point.points,
                 icon=folium.Icon(
-                    icon=self._standard_icons.get(self._user_query, DEFAULT_ICON),
+                    icon=self._standard_icons.get(self._user_query, self.DEFAULT_ICON),
                     # TODO COMMENT THIS
                     color='green' if target_point and target_point == point else 'blue',
                     prefix="fa"),
