@@ -1,40 +1,22 @@
-from src.main.python.logic.tree.point import Point
+from src.main.python.logic.point import Point
 from src.main.python.logic.tree.tree_map import KdTreeMap
 from src.main.python.logic.map.queries import query_by_reserved, query_by_name, get_reserved
-from src.main.python.logic.map.map_constants import JAVA_SCRIPT, HTML
+from src.main.python.logic.map.web_source import JAVA_SCRIPT, HTML
 from itertools import zip_longest
 from src.main.python.logic.map.web_parser import WebParser
 from typing import Union, Tuple, List
 from src.main.python.logic.map.data_point import DataPoint
+from src.main.python.json_connector import JsonConnector
+from .map_interface import IMap
 import folium
 import overpy
 
 MAP_POINT = Tuple[Union[float, int], Union[float, int], dict]
 
-STANDARD_ICON = 'info-circle'
-ICONS = {
-    'cafe': 'coffee',
-    'fast_food': 'cutlery',
-    'restaurant': 'cutlery',
-    'bar': 'beer',
-    'cinema': 'film',
-    'fitness': 'hand-rock-o',
-    'museum': 'university',
-    'library': 'book',
-    'supermarket': 'shopping-basket',
-    'clothes': 'shopping-bag',
-    'mall': 'building',
-    'electronic': 'calculator',
-    'hospital': 'hospital-o',
-    'fuel': 'tint',
-    'hotel': 'bed',
-    'pharmacy': 'plus-square',
-}
+DEFAULT_ICON = 'info-circle'
 
 
-# TODO Constant to JSON, create JSON connector
-
-class Map:
+class Map(IMap):
     INIT_LOCATION = [56.0140, 92.8563]
     STANDARD_ZOOM = 10
 
@@ -45,7 +27,11 @@ class Map:
         self._tree = KdTreeMap()
         self._current_zoom = self.STANDARD_ZOOM
 
-    def set_zoom(self, zoom: int) -> None:
+        # Icons for standard requests
+        json_connector = JsonConnector()
+        self._standard_icons = json_connector.get_icons()
+
+    def update_current_zoom(self, zoom: int) -> None:
         """
         Set zoom value
         This value is used when reloading
@@ -64,55 +50,7 @@ class Map:
         self._points_on_map = None
         return new_map
 
-    def generate_map(self, query: str, start_point: tuple, end_point: tuple) -> folium.Map:
-        if len(start_point) != 2 or len(end_point) != 2:
-            raise ValueError("Points must be 2-dimension tuple")
-        if not all(isinstance(item, (float, int)) for item in start_point + end_point):
-            raise ValueError("All points must be int or float")
-        first_point = Point(start_point[0], start_point[1])
-        second_point = Point(end_point[0], end_point[1])
-        return self._generate_map(query, first_point, second_point)
-
-    def find_closest(self, pivot: tuple) -> Union[folium.Map, None]:
-        if len(pivot) != 2:
-            raise ValueError("Points must be 2-dimension tuple")
-        if not all(isinstance(item, (float, int)) for item in pivot):
-            raise ValueError("All points must be int or float")
-        point = Point(pivot[0], pivot[1])
-        return self._find_closest(point)
-
-    def _find_closest(self, pivot: Point) -> Union[folium.Map, None]:
-        """
-        Searches the current map for the nearest
-        object to the point, then marks the nearest
-        object to it, and returns a modified map
-        :param pivot: The point for which the nearest object is searched for
-        :return: Modified map
-        """
-        if not self._points_on_map:
-            return None
-        packed_data = self.pack_answer(self._points_on_map)
-        self._tree.rebuild_tree(packed_data)
-
-        closest = self._tree.closest_node(pivot)
-
-        closest_point = closest.point
-
-        new_map = self._build(closest_point, closest_point)
-
-        # Here I add a user point to the map
-        folium.Marker(
-            pivot.points,
-            icon=folium.Icon(
-                icon=STANDARD_ICON,
-                prefix="fa",
-                color='red'),
-            popup=f"<i>{'PIVOT'}</i>"
-        ).add_to(new_map)
-
-        return new_map
-
-    def _generate_map(self, query: str, start_point: Point, end_point: Point) -> folium.Map:
+    def find_objects(self, query: str, start_point: Point, end_point: Point) -> folium.Map:
         """
         Generates a folium map,
         if the query refers to a reserved type, (cafe, movie, gym)
@@ -135,6 +73,37 @@ class Map:
         new_map = self._build(target_point=None, location=middle_point)
         return new_map
 
+    def nearest_object(self, pivot: Point) -> Union[folium.Map, None]:
+        """
+        Searches the current map for the nearest
+        object to the point, then marks the nearest
+        object to it, and returns a modified map
+        :param pivot: The point for which the nearest object is searched for
+        :return: Modified map
+        """
+        if not self._points_on_map:
+            return None
+        packed_data = self.pack_map_points(self._points_on_map)
+        self._tree.rebuild_tree(packed_data)
+
+        closest = self._tree.closest_node(pivot)
+
+        closest_point = closest.point
+
+        new_map = self._build(closest_point, closest_point)
+
+        # Here I add a user point to the map
+        folium.Marker(
+            pivot.points,
+            icon=folium.Icon(
+                icon=DEFAULT_ICON,
+                prefix="fa",
+                color='red'),
+            popup=f"<i>{'PIVOT'}</i>"
+        ).add_to(new_map)
+
+        return new_map
+
     def _build(self, target_point: Union[Point, None], location: Point) -> folium.Map:
         new_map = self._pure_custom_map(location=location, zoom=self._current_zoom)
 
@@ -146,7 +115,7 @@ class Map:
                 # Set cords
                 point.points,
                 icon=folium.Icon(
-                    icon=ICONS.get(self._query, STANDARD_ICON),
+                    icon=self._standard_icons.get(self._query, DEFAULT_ICON),
                     # TODO COMMENT THIS
                     color='green' if target_point and target_point == point else 'blue',
                     prefix="fa"),
@@ -216,7 +185,7 @@ class Map:
         return f"""Name: {point_data.get('name', 'n/a')}<br>Amenity: {point_data.get('amenity', 'n/a')}"""
 
     @staticmethod
-    def pack_answer(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
+    def pack_map_points(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
         result = []
         for item in unpacked_answer:
             result.append(item.tuple_data)

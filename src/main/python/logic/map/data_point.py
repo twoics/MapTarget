@@ -1,4 +1,4 @@
-from src.main.python.logic.tree.point import Point
+from src.main.python.logic.point import Point
 
 
 class DataPoint:

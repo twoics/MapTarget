@@ -2,15 +2,16 @@ from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
 from PyQt5.QtGui import QMovie, QColor
 
-from map_ui import MapUI
-import icons  # Doesn't remove this, it's icons import
-import sys
+from src.main.python.ui.map_ui import MapUI
+
+# Doesn't remove this, it's icons import
+import src.main.python.ui.icons
 
 
 class MainUI(QMainWindow):
     search_objects = QtCore.pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, ui_map: MapUI):
         super().__init__()
         self.centralwidget = QtWidgets.QWidget(self)
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -51,10 +52,10 @@ class MainUI(QMainWindow):
         self.fast_food = QtWidgets.QPushButton(self.buttons)
         self.hospital = QtWidgets.QPushButton(self.buttons)
         self.mall = QtWidgets.QPushButton(self.buttons)
-        self.map = MapUI()
 
-        self._thread = QtCore.QThread()
-        self.map.moveToThread(self._thread)
+        self._map = ui_map
+        # self._thread = QtCore.QThread()
+        # self.map.moveToThread(self._thread)
 
         self.footer = QtWidgets.QFrame(self.body)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.footer)
@@ -65,16 +66,18 @@ class MainUI(QMainWindow):
         self.clear_all = QtWidgets.QPushButton(self.footer)
         self.movie = QMovie("loading.gif")
 
-        self._thread.start()
+        # self._thread.start()
 
         self.setup_ui()
         self._init_slots()
 
     def _find_closest(self):
-        self.map.find_nearest()
+        # self.map.find_nearest()
+        self._map.request_nearest_object()
 
     def _clear_map(self):
-        self.map.clear_map()
+        # self.map.clear_map()
+        self._map.request_pure_map()
 
     def _map_error(self, warning_text: str):
         QMessageBox.warning(self, "Some warning", warning_text)
@@ -122,11 +125,11 @@ class MainUI(QMainWindow):
 
         self.clear_all.clicked.connect(self._clear_map)
         self.find_butt.clicked.connect(self._find_closest)
-        self.map.some_error.connect(self._map_error)
-        self.search_objects.connect(self.map.set_map_by_query)
+        self._map.some_error.connect(self._map_error)
+        self.search_objects.connect(self._map.request_objects)
 
         self.search_objects.connect(self._show_indicator)
-        self.map.search_done.connect(self._hide_indicator)
+        self._map.search_done.connect(self._hide_indicator)
 
     def setup_ui(self):
         self.setObjectName("MainWindow")
@@ -421,10 +424,11 @@ class MainUI(QMainWindow):
         # self.map.setFrameShape(QtWidgets.QFrame.StyledPanel)
         # self.map.setFrameShadow(QtWidgets.QFrame.Raised)
         # self.map.setObjectName("map")
-        # TODO
-        self.map.clear_map()
 
-        self.verticalLayout_2.addWidget(self.map.get_view())
+        # TODO
+        # self.map.request_pure_map()
+
+        self.verticalLayout_2.addWidget(self._map.get_view())
 
         self.footer.setMinimumSize(QtCore.QSize(0, 60))
         self.footer.setMaximumSize(QtCore.QSize(16777215, 60))
@@ -521,14 +525,3 @@ class MainUI(QMainWindow):
         self.mall.setText(_translate("MainWindow", "mall"))
         self.find_butt.setText(_translate("MainWindow", "Find"))
         self.clear_all.setText(_translate("MainWindow", "Clear All"))
-
-
-app = QtWidgets.QApplication(sys.argv)
-# create window
-
-
-ui = MainUI()
-# fill windo
-ui.show()
-
-sys.exit(app.exec_())

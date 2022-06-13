@@ -1,7 +1,8 @@
+import folium
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from PyQt5 import QtCore
-from src.main.python.logic.map_generator import Map
 import io
+from src.main.python.ui.view_interface import IView
 
 EMPTY_AREA_WARNING = "Before searching for objects, you must first select the search area"
 NULL_POINTS = """
@@ -45,13 +46,22 @@ class WebEnginePage(QWebEnginePage):
             self.zoom_changed.emit(int(msg))
 
 
-class MapUI(QtCore.QObject):
+class WindowViewMeta(type(QtCore.QObject), type(IView)):
+    pass
+
+
+class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
     """
     The class represents the UI for the map
     """
+
     some_error = QtCore.pyqtSignal(str)
     search_done = QtCore.pyqtSignal()
     refresh_map = QtCore.pyqtSignal()
+
+    pure_map_signal = QtCore.pyqtSignal()
+    find_closest_signal = QtCore.pyqtSignal(tuple)
+    find_objects_signal = QtCore.pyqtSignal(str, tuple, tuple)
 
     def __init__(self):
         super().__init__()
@@ -59,63 +69,46 @@ class MapUI(QtCore.QObject):
         self.rect_points = None
         self.mapa = None
 
-        self.generator = Map()
         self.view = QWebEngineView()
+
         self.page = WebEnginePage(self.view)
         self.view.setPage(self.page)
         self._init_signals()
 
-    def get_view(self):
-        return self.view
+    def zoom_changed_signal(self) -> QtCore.pyqtSignal(int):
+        return self.page.zoom_changed
 
-    def find_nearest(self) -> None:
-        """
-        Finds the nearest object in the constructed map
-        to the pivot, marks it with a special color, and updates the map
-        :return: None
-        """
+    def nearest_object_request(self) -> QtCore.pyqtSignal(tuple):
+        return self.find_closest_signal
+
+    def all_object_request(self) -> QtCore.pyqtSignal(str, tuple, tuple):
+        return self.find_objects_signal
+
+    def clear_map_request(self) -> QtCore.pyqtSignal():
+        return self.pure_map_signal
+
+    def set_map(self, new_map: folium.Map):
+        self.mapa = new_map
+        self.refresh_map.emit()
+
+    def request_nearest_object(self) -> None:
         if self.marker_point is None:
             self.some_error.emit(EMPTY_MARKER)
             return
+        self.find_closest_signal.emit(self.marker_point)
 
-        result = self.generator.find_closest(self.marker_point)
-        if result is None:
-            self.some_error.emit(NULL_POINTS)
-            return
-
-        self.mapa = result
-        self.refresh_map.emit()
-
-    def set_map_by_query(self, query: str) -> None:
-        """
-        Builds a map by finding special objects by reserved type in the selected area
-        :param query: Reserved type by which to find objects
-        :return: None
-        """
-
+    def request_objects(self, query: str):
         if self.rect_points is None:
             self.search_done.emit()
             self.some_error.emit(EMPTY_AREA_WARNING)
             return
-        #
-        # if query in self.generator.get_reserved_queries():
-        #     self.mapa = self.generator.map_by_reserved(query, self.rect_points[0], self.rect_points[2])
-        # else:
-        #     self.mapa = self.generator.map_by_name(query, self.rect_points[0], self.rect_points[2])
+        self.find_objects_signal.emit(query, self.rect_points[0], self.rect_points[2])
 
-        self.mapa = self.generator.generate_map(query, self.rect_points[0], self.rect_points[2])
+    def request_pure_map(self):
+        self.pure_map_signal.emit()
 
-        self.refresh_map.emit()
-
-        self.search_done.emit()
-
-    def clear_map(self) -> None:
-        """
-        Completely clear the map and parameters
-        :return: None
-        """
-        self.mapa = self.generator.pure_map()
-        self.refresh_map.emit()
+    def get_view(self):
+        return self.view
 
     def _item_drawn(self, data: tuple) -> None:
         """
@@ -137,7 +130,7 @@ class MapUI(QtCore.QObject):
         """
         self.page.item_drawn.connect(self._item_drawn)
         self.refresh_map.connect(self._refresh_map)
-        self.page.zoom_changed.connect(self.generator.set_zoom)
+        # self.page.zoom_changed.connect(self.generator.set_zoom)
 
     def _refresh_map(self):
         """

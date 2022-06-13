@@ -5,7 +5,7 @@ Module implementing the k-d tree
 from typing import Union, Tuple, List
 
 # Local application imports
-from .point import Point
+from src.main.python.logic.point import Point
 from .node import Node
 
 
@@ -23,6 +23,7 @@ class KdTree:
         Builds a k-d tree based on the tuple of Points and Data
         :param init_data: Tuple with points and data by which to build a tree
         """
+        # TODO FIX list
         self._nodes_in_area = []
 
         self._output_str = ""
