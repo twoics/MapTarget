@@ -1,3 +1,8 @@
+"""
+The module implements a class derived from the KD class
+of the tree and overrides distance calculation method
+"""
+
 # Standard library import
 import math
 
@@ -7,6 +12,14 @@ from .node import Node
 
 
 class KdTreeMap(KdTree):
+    """
+    The class inherits from the KD tree and overrides
+    method of calculating the distance between nodes,
+    this is necessary for the correct operation of the
+    KD tree through the objects on the map,
+    which have point coordinates - latitude longitude
+    """
+
     EARTH_RADIUS = 6372795
     PI = math.pi
 
@@ -22,6 +35,7 @@ class KdTreeMap(KdTree):
         lon_1 = node_1.point[1] * self.PI / 180
         lat_2 = node_2.point[0] * self.PI / 180
         lon_2 = node_2.point[1] * self.PI / 180
+        # TODO FIX THIS
 
         cl1 = math.cos(lat_1)
         cl2 = math.cos(lat_2)

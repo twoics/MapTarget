@@ -1,42 +1,18 @@
-import folium
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-from PyQt5 import QtCore
+"""
+The module is used to display the map
+"""
+
+# Standard library import
 import io
+
+# Third party imports
+import folium
+from PyQt5 import QtCore
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+# Local application imports
 from src.main.python.ui.view_interface import IView
-
-
-class WebEnginePage(QWebEnginePage):
-    item_drawn = QtCore.pyqtSignal(tuple)
-    zoom_changed = QtCore.pyqtSignal(int)
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.parent = parent
-
-    def javaScriptAlert(self, QUrl, p_str):
-        self.item_drawn.emit(self._js_handler(p_str))
-
-    def javaScriptConsoleMessage(self, level, msg, line, sourceID):
-        if level == 0:
-            self.zoom_changed.emit(int(msg))
-
-    @staticmethod
-    def _js_handler(js_string: str) -> tuple:
-        """
-        Returns the tuple obtained by processing the string
-        :param js_string: JS string to be processed
-        :return: Tuple from processed JS string
-        """
-        result = []
-        split_str = js_string.replace("LatLng", "/").split("/")
-        for item in split_str:
-            item = item[:-1].replace('(', '').replace(')', '') \
-                if item[-1] == ',' else item.replace('(', '').replace(')', '')
-
-            if item != 'rectangle' and item != 'marker':
-                item = tuple(map(float, item.split(',')))
-            result.append(item)
-        return tuple(result)
+from .web_engine import WebEnginePage
 
 
 class WindowViewMeta(type(QtCore.QObject), type(IView)):
@@ -46,6 +22,7 @@ class WindowViewMeta(type(QtCore.QObject), type(IView)):
 class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
     """
     The class represents the UI for the map
+    Implement the interface through which the controller works with the ui card
     """
 
     EMPTY_AREA = "Before searching for objects, you must select the search area"
@@ -60,6 +37,9 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
     find_objects_signal = QtCore.pyqtSignal(str, tuple, tuple)
 
     def __init__(self):
+        """
+        Initializing the folium map visualization
+        """
         super().__init__()
         self.marker_point = None
         self.rect_points = None
@@ -72,28 +52,59 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         self._init_signals()
 
     def zoom_changed_signal(self) -> QtCore.pyqtSignal(int):
+        """
+        param: Zoom value
+        :return: Signal for listening, emitted when user zooms in/out the map
+        """
         return self.page.zoom_changed
 
     def nearest_object_request(self) -> QtCore.pyqtSignal(tuple):
+        """
+        param: Point coordinates
+        :return: Signal for listening, emitted when the user wants to
+        get the closest object, to the selected point
+        """
         return self.find_closest_signal
 
     def all_object_request(self) -> QtCore.pyqtSignal(str, tuple, tuple):
+        """
+        param: query, start_point, end_point
+        :return:Signal for listening, emitted when the user
+        wants to get all objects in some area
+        """
         return self.find_objects_signal
 
     def clear_map_request(self) -> QtCore.pyqtSignal():
+        """
+        :return: Signal for listening, emitted when the user wants to get a blank map
+        """
         return self.pure_map_signal
 
     def set_map(self, new_map: folium.Map):
+        """
+        Displays the transferred map
+        :param new_map: Map to set
+        :return: None
+        """
         self.mapa = new_map
         self.refresh_map.emit()
 
     def request_nearest_object(self) -> None:
+        """
+        Request for the closest object to a point
+        :return: None
+        """
         if self.marker_point is None:
             self.some_error.emit(self.EMPTY_MARKER)
             return
         self.find_closest_signal.emit(self.marker_point)
 
     def request_objects(self, query: str):
+        """
+        Request to find objects on query in the selected area
+        :param query: Query by which to search for objects
+        :return: None
+        """
         if self.rect_points is None:
             self.search_done.emit()
             self.some_error.emit(self.EMPTY_AREA)
@@ -101,9 +112,16 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         self.find_objects_signal.emit(query, self.rect_points[0], self.rect_points[2])
 
     def request_pure_map(self):
+        """
+        Request to install a blank map
+        :return: None
+        """
         self.pure_map_signal.emit()
 
     def get_view(self):
+        """
+        :return: Get QWebEngineView
+        """
         return self.view
 
     def _item_drawn(self, data: tuple) -> None:
@@ -126,7 +144,6 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         """
         self.page.item_drawn.connect(self._item_drawn)
         self.refresh_map.connect(self._refresh_map)
-        # self.page.zoom_changed.connect(self.generator.set_zoom)
 
     def _refresh_map(self):
         """

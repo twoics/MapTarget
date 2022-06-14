@@ -1,15 +1,24 @@
+"""
+The module generates the folium map
+"""
+
+# Standard library import
+from itertools import zip_longest
+from typing import Union, Tuple, List
+
+# Third party imports
+import folium
+import overpy
+
+# Local application imports
 from src.main.python.logic.point import Point
 from src.main.python.logic.tree.tree_map import KdTreeMap
 from src.main.python.logic.map.queries import Query
 from src.main.python.logic.map.web_source import JAVA_SCRIPT, HTML
-from itertools import zip_longest
 from src.main.python.logic.map.web_parser import WebParser
-from typing import Union, Tuple, List
 from src.main.python.logic.map.data_point import DataPoint
 from src.main.python.json_connector import JsonConnector
 from .map_interface import IMap
-import folium
-import overpy
 
 
 class Map(IMap):
@@ -18,6 +27,10 @@ class Map(IMap):
     DEFAULT_ICON = 'info-circle'
 
     def __init__(self):
+        """
+        Initializing the folium card generation object
+        """
+
         # [ DataPoint(), DataPoint()]
         self._points_on_map = None
         self._user_query = None
@@ -103,10 +116,17 @@ class Map(IMap):
         return new_map
 
     def _build(self, target_point: Union[Point, None], location: Point) -> folium.Map:
+        """
+        The method generates a folium map
+        :param target_point: If not none, when building the map,
+        the generator will highlight this point with a special color
+        :param location: What coordinates to focus after building the map
+        :return: New folium map
+        """
         new_map = self._pure_custom_map(location=location, zoom=self._current_zoom)
 
         for point_obj in self._points_on_map:
-            point_data = self._get_point_info(point_obj.data)
+            point_data = self._html_marker(point_obj.data)
             point = point_obj.point
 
             folium.Marker(
@@ -174,7 +194,7 @@ class Map(IMap):
         return data_points_list
 
     @staticmethod
-    def _get_point_info(point_data: dict) -> str:
+    def _html_marker(point_data: dict) -> str:
         """
         Return HTML for Marker PopUP
         :param point_data: Tags that contain a point
@@ -184,6 +204,12 @@ class Map(IMap):
 
     @staticmethod
     def pack_map_points(unpacked_answer: List[DataPoint]) -> Tuple[Tuple[Point, Union[dict, None]], ...]:
+        """
+        Converts the DataPoint type that the map_generator works with,
+        to the data type that the KD-tree receives as input
+        :param unpacked_answer: Data point list
+        :return: Tuple as input KD-tree
+        """
         result = []
         for item in unpacked_answer:
             result.append(item.tuple_data)

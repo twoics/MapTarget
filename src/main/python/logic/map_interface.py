@@ -1,6 +1,15 @@
+"""
+The module contains an interface that implements Map,
+also through this interface the controller works with the map
+"""
+# Standard library import
 from abc import ABC, abstractmethod
 from typing import Union
+
+# Third party imports
 import folium
+
+# Local application imports
 from src.main.python.logic.point import Point
 
 

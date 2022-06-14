@@ -1,6 +1,7 @@
 """
 Module implementing the k-d tree
 """
+
 # Standard library import
 from typing import Union, Tuple, List
 

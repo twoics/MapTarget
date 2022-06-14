@@ -1,5 +1,6 @@
 """
-Module implementing the point of node location
+Module implementing the 2-dimension point
+This module uses a lot of other modules, so it was taken out
 """
 # Standard library import
 import math
@@ -27,6 +28,7 @@ class Point:
     def __eq__(self, other):
         if not isinstance(other, Point):
             raise TypeError("Objects to be compared with Point must be of type Point")
+        # TODO FIX THIS
 
         if other.x == self._x and other.y == self._y:
             return True
@@ -58,20 +60,40 @@ class Point:
 
     @property
     def points(self) -> tuple:
+        """
+        Get tuple coordinates (x, y)
+        :return: Tuple with coordinates
+        """
         return self._x, self._y
 
     @property
     def x(self) -> float:
+        """
+        :return: Get x coordinate
+        """
         return self._x
 
     @x.setter
     def x(self, new_x: float):
+        """
+        Set x coordinate
+        :param new_x: Value to set
+        :return: None
+        """
         self._x = new_x
 
     @property
     def y(self) -> float:
+        """
+        :return: Get y coordinate
+        """
         return self._y
 
     @y.setter
     def y(self, new_y: float):
+        """
+        Set y coordinate
+        :param new_y: Value to set
+        :return: None
+        """
         self._y = new_y

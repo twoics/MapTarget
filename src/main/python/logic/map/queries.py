@@ -1,19 +1,32 @@
-from typing import Tuple, Union, List
-from overpy.exception import OverpassTooManyRequests, OverpassGatewayTimeout
-from ...json_connector import JsonConnector
+"""
+The module implements a class that requests the
+API to get objects on the map
+"""
 
-import overpy
+# Standard library imports
 import time
 import logging
+from typing import Tuple, Union, List
+
+# Third party imports
+import overpy
+from overpy.exception import OverpassTooManyRequests, OverpassGatewayTimeout
+
+# Local application imports
+from ...json_connector import JsonConnector
 
 
 class Query:
     POINT = Tuple[Union[int, float], Union[int, float]]
+    SHORT_BREAK = 1
+    LONG_BREAK = 5
 
     def __init__(self):
+        """
+        Initializing object to request to Overpass
+        for get objects on map
+        """
         self._api = overpy.Overpass()
-        self._short_break = 1
-        self._long_break = 5
 
         # Get reserved queries (cafe, cinema ...)
         json_connector = JsonConnector()
@@ -82,10 +95,10 @@ class Query:
                 query_result = self._api.query(query)
             except OverpassTooManyRequests:
                 logging.warning("So many requests, but query still running")
-                time.sleep(self._short_break)
+                time.sleep(self.SHORT_BREAK)
                 continue
             except OverpassGatewayTimeout:
                 logging.warning("Gateway Timeout, query is reload")
-                time.sleep(self._long_break)
+                time.sleep(self.LONG_BREAK)
                 continue
             return query_result
