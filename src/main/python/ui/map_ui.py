@@ -28,27 +28,40 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
     EMPTY_AREA = "Before searching for objects, you must select the search area"
     EMPTY_MARKER = "Marker not found"
 
+    # Signal that is sent to the main UI to show an error message
+    # Param: Message error
     some_error = QtCore.pyqtSignal(str)
-    search_done = QtCore.pyqtSignal()
-    refresh_map = QtCore.pyqtSignal()
 
+    # The signal that is emitted when the map is finished is sent to stop gif
+    search_done = QtCore.pyqtSignal()
+
+    # New clear map setting signal
     pure_map_signal = QtCore.pyqtSignal()
+
+    # Signal to set the map and mark the nearest object
+    # Param: point - (latitude, longitude)
     find_closest_signal = QtCore.pyqtSignal(tuple)
+
+    # Signal, to set the map and mark all objects satisfying the query
+    # Param: (query, start_point, end_point)
     find_objects_signal = QtCore.pyqtSignal(str, tuple, tuple)
+
+    # Internal signal, used to update the map
+    refresh_map = QtCore.pyqtSignal()
 
     def __init__(self):
         """
         Initializing the folium map visualization
         """
         super().__init__()
-        self.marker_point = None
-        self.rect_points = None
-        self.mapa = None
+        self._marker_point = None
+        self._rect_points = None
+        self._mapa = None
 
-        self.view = QWebEngineView()
+        self._view = QWebEngineView()
+        self._page = WebEnginePage(self._view)
 
-        self.page = WebEnginePage(self.view)
-        self.view.setPage(self.page)
+        self._view.setPage(self._page)
         self._init_signals()
 
     def zoom_changed_signal(self) -> QtCore.pyqtSignal(int):
@@ -56,7 +69,7 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         param: Zoom value
         :return: Signal for listening, emitted when user zooms in/out the map
         """
-        return self.page.zoom_changed
+        return self._page.zoom_changed
 
     def nearest_object_request(self) -> QtCore.pyqtSignal(tuple):
         """
@@ -86,7 +99,8 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         :param new_map: Map to set
         :return: None
         """
-        self.mapa = new_map
+        self._mapa = new_map
+        self.search_done.emit()
         self.refresh_map.emit()
 
     def request_nearest_object(self) -> None:
@@ -94,10 +108,10 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         Request for the closest object to a point
         :return: None
         """
-        if self.marker_point is None:
-            self.some_error.emit(self.EMPTY_MARKER)
+        if self._marker_point is None:
+            self._emit_error(self.EMPTY_MARKER)
             return
-        self.find_closest_signal.emit(self.marker_point)
+        self.find_closest_signal.emit(self._marker_point)
 
     def request_objects(self, query: str):
         """
@@ -105,11 +119,10 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         :param query: Query by which to search for objects
         :return: None
         """
-        if self.rect_points is None:
-            self.search_done.emit()
-            self.some_error.emit(self.EMPTY_AREA)
+        if self._rect_points is None:
+            self._emit_error(self.EMPTY_AREA)
             return
-        self.find_objects_signal.emit(query, self.rect_points[0], self.rect_points[2])
+        self.find_objects_signal.emit(query, self._rect_points[0], self._rect_points[2])
 
     def request_pure_map(self):
         """
@@ -122,7 +135,16 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         """
         :return: Get QWebEngineView
         """
-        return self.view
+        return self._view
+
+    def _emit_error(self, message: str):
+        """
+        Sends a signal with an error message to the main UI
+        :param message: Error message
+        :return: None
+        """
+        self.some_error.emit(message)
+        self.search_done.emit()
 
     def _item_drawn(self, data: tuple) -> None:
         """
@@ -131,18 +153,18 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         :return: None
         """
         if data[0] == 'rectangle':
-            self.rect_points = data[1:]
-            self.marker_point = None
+            self._rect_points = data[1:]
+            self._marker_point = None
         else:
-            self.rect_points = None
-            self.marker_point = data[1]
+            self._rect_points = None
+            self._marker_point = data[1]
 
     def _init_signals(self) -> None:
         """
         Initializing signals
         :return: None
         """
-        self.page.item_drawn.connect(self._item_drawn)
+        self._page.item_drawn.connect(self._item_drawn)
         self.refresh_map.connect(self._refresh_map)
 
     def _refresh_map(self):
@@ -150,9 +172,11 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         Updates the map UI, on the current map
         :return: None
         """
-        self.marker_point = None
-        self.rect_points = None
+        self._marker_point = None
+        self._rect_points = None
 
         data = io.BytesIO()
-        self.mapa.save(data, close_file=False)
-        self.view.setHtml(data.getvalue().decode())  # give html of folium map to webengine
+        self._mapa.save(data, close_file=False)
+
+        # give html of folium map to webengine
+        self._view.setHtml(data.getvalue().decode())

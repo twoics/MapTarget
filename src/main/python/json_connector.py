@@ -26,7 +26,7 @@ class JsonConnector:
         return self.get_data("queries.json", "standard_queries")
 
     @staticmethod
-    def get_data(file: str, field: str) -> dict:
+    def get_data(file: str, field: str = None):
         """
         Method for accessing the json file
         :param file: Name and type of file to be accessed
@@ -35,6 +35,8 @@ class JsonConnector:
         """
         try:
             with open(BASE_CONTEXT.get_resource(file)) as json_file:
+                if field is None:
+                    return json_file
                 json_dict = json.load(json_file)
                 if field in json_dict:
                     return json_dict[field]
