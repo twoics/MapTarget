@@ -35,14 +35,14 @@ class IMap(ABC):
         pass
 
     @abstractmethod
-    def find_objects(self, query: str, start_point: Point, end_point: Point) -> folium.Map:
+    def find_objects(self, query: str, start_point: Point, end_point: Point) -> Union[folium.Map, None]:
         """
         Returns the map, with the found objects from the query,
         bounded by coordinates start_point, end_point
         :param query: Query to find objects
         :param start_point: Lower left limit of the search
         :param end_point: Right upper limit of the search
-        :return: Map with points
+        :return: Map with points, or None if null objects found
         """
         pass
 

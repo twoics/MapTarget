@@ -84,21 +84,6 @@ class MainUI(QMainWindow):
         self._setup_ui()
         self._init_slots()
 
-    def _find_closest(self):
-        """
-        Request to install a new map, and highlight
-        the nearest object to a given point on it
-        :return: None
-        """
-        self._map.request_nearest_object()
-
-    def _clear_map(self):
-        """
-        Request to set a new blank map
-        :return: None
-        """
-        self._map.request_pure_map()
-
     def _map_error(self, warning_text: str):
         """
         Output an error to the user screen
@@ -171,8 +156,8 @@ class MainUI(QMainWindow):
         """
         self._init_buttons()
 
-        self.clear_all.clicked.connect(self._clear_map)
-        self.find_butt.clicked.connect(self._find_closest)
+        self.clear_all.clicked.connect(self._map.request_pure_map)
+        self.find_butt.clicked.connect(self._map.request_nearest_object)
         self._map.some_error.connect(self._map_error)
 
         self.search_objects.connect(self._show_indicator)
