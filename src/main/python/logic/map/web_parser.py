@@ -1,3 +1,4 @@
+# Third party imports
 from branca.element import Template, MacroElement, Element
 
 
@@ -15,6 +16,12 @@ class WebParser(MacroElement):
     )
 
     def __init__(self, script=None, html=None, args=None):
+        """
+        Parse HTML of JS with args
+        :param script: JS script
+        :param html: HTML
+        :param args: Some arguments for parse
+        """
         super(WebParser, self).__init__()
         self.script = Element(script)
         self.html = Element(html)

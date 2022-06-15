@@ -1,17 +1,35 @@
+"""
+Module that implements the basic UI class
+"""
+
+# Third party imports
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
 from PyQt5.QtGui import QMovie, QColor
 
-from map_ui import MapUI
-import icons  # Doesn't remove this, it's icons import
-import sys
+# Local application imports
+from src.main.python.ui.map_ui import MapUI
+from src.main.python.json_connector import JsonConnector
+# Doesn't remove this, it's icons import
+import src.main.python.ui.icons
 
 
 class MainUI(QMainWindow):
+    # Signal emitted to search for objects
+    # Param: Query - cafe, cinema, ... (or name)
     search_objects = QtCore.pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, ui_map: MapUI):
+        """
+        Initializing the main UI of the application
+        :param ui_map: UI maps
+        """
         super().__init__()
+        json_connector = JsonConnector()
+
+        # The gif that is shown when the app is running
+        working_gif = json_connector.get_data("loading.gif").name
+
         self.centralwidget = QtWidgets.QWidget(self)
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.head = QtWidgets.QFrame(self.centralwidget)
@@ -51,10 +69,8 @@ class MainUI(QMainWindow):
         self.fast_food = QtWidgets.QPushButton(self.buttons)
         self.hospital = QtWidgets.QPushButton(self.buttons)
         self.mall = QtWidgets.QPushButton(self.buttons)
-        self.map = MapUI()
 
-        self._thread = QtCore.QThread()
-        self.map.moveToThread(self._thread)
+        self._map = ui_map
 
         self.footer = QtWidgets.QFrame(self.body)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.footer)
@@ -63,23 +79,71 @@ class MainUI(QMainWindow):
         self.busy_indicator = QtWidgets.QLabel(self.indicator)
         self.find_butt = QtWidgets.QPushButton(self.footer)
         self.clear_all = QtWidgets.QPushButton(self.footer)
-        self.movie = QMovie("loading.gif")
+        self.movie = QMovie(working_gif)
 
-        self._thread.start()
-
-        self.setup_ui()
+        self._setup_ui()
         self._init_slots()
 
     def _find_closest(self):
-        self.map.find_nearest()
+        """
+        Request to install a new map, and highlight
+        the nearest object to a given point on it
+        :return: None
+        """
+        self._map.request_nearest_object()
 
     def _clear_map(self):
-        self.map.clear_map()
+        """
+        Request to set a new blank map
+        :return: None
+        """
+        self._map.request_pure_map()
 
     def _map_error(self, warning_text: str):
+        """
+        Output an error to the user screen
+        :param warning_text: Error text
+        :return: None
+        """
         QMessageBox.warning(self, "Some warning", warning_text)
 
+    def _map_by_name(self):
+        """
+        Emits a signal to install a new map through a UI text string
+        :return: None
+        """
+        name = self.find_name_line.text()
+        self.find_name_line.setText('')
+
+        if name == '':
+            self._map_error('Empty name')
+            return
+
+        self.search_objects.emit(name)
+
+    def _show_indicator(self):
+        """
+        Display operating indicator
+        :return: None
+        """
+        self.busy_indicator.setHidden(False)
+        self.movie.start()
+
+    def _hide_indicator(self):
+        """
+        Hide operating indicator
+        :return: None
+        """
+        self.movie.stop()
+        self.busy_indicator.setHidden(True)
+
     def _init_buttons(self):
+        """
+        Initialize slots for button press events
+        :return: None
+        """
+        # Pressing these buttons (reserved requests) sends
+        # a signal to set a new map, with found objects, in a limited area
         self.cafe.clicked.connect(lambda: self.search_objects.emit('cafe'))
         self.fast_food.clicked.connect(lambda: self.search_objects.emit('fast_food'))
         self.restaurant.clicked.connect(lambda: self.search_objects.emit('restaurant'))
@@ -97,38 +161,29 @@ class MainUI(QMainWindow):
         self.hotel.clicked.connect(lambda: self.search_objects.emit('hotel'))
         self.pharmacy.clicked.connect(lambda: self.search_objects.emit('pharmacy'))
 
+        # Search by query in input field
         self.find_name_but.clicked.connect(self._map_by_name)
 
-    def _map_by_name(self):
-        name = self.find_name_line.text()
-        self.find_name_line.setText('')
-
-        if name == '':
-            self._map_error('Empty name')
-            return
-
-        self.search_objects.emit(name)
-
-    def _show_indicator(self):
-        self.busy_indicator.setHidden(False)
-        self.movie.start()
-
-    def _hide_indicator(self):
-        self.movie.stop()
-        self.busy_indicator.setHidden(True)
-
     def _init_slots(self):
+        """
+        Initializing slots for service UI signals
+        :return: None
+        """
         self._init_buttons()
 
         self.clear_all.clicked.connect(self._clear_map)
         self.find_butt.clicked.connect(self._find_closest)
-        self.map.some_error.connect(self._map_error)
-        self.search_objects.connect(self.map.set_map_by_query)
+        self._map.some_error.connect(self._map_error)
 
         self.search_objects.connect(self._show_indicator)
-        self.map.search_done.connect(self._hide_indicator)
+        self._map.search_done.connect(self._hide_indicator)
+        self.search_objects.connect(self._map.request_objects)
 
-    def setup_ui(self):
+    def _setup_ui(self):
+        """
+        Set up UI all elements
+        :return: None
+        """
         self.setObjectName("MainWindow")
         self.resize(1036, 730)
         self.centralwidget.setObjectName("centralwidget")
@@ -416,15 +471,7 @@ class MainUI(QMainWindow):
         self.verticalLayout_3.addWidget(self.buttons)
         self.verticalLayout_2.addWidget(self.query_butt)
 
-        # self.map.setMinimumSize(QtCore.QSize(100, 100))
-        # self.map.setStyleSheet("")
-        # self.map.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        # self.map.setFrameShadow(QtWidgets.QFrame.Raised)
-        # self.map.setObjectName("map")
-        # TODO
-        self.map.clear_map()
-
-        self.verticalLayout_2.addWidget(self.map.get_view())
+        self.verticalLayout_2.addWidget(self._map.get_view())
 
         self.footer.setMinimumSize(QtCore.QSize(0, 60))
         self.footer.setMaximumSize(QtCore.QSize(16777215, 60))
@@ -495,10 +542,14 @@ class MainUI(QMainWindow):
         self.verticalLayout.addWidget(self.body)
         self.setCentralWidget(self.centralwidget)
 
-        self.translate_ui()
+        self._translate_ui()
         QtCore.QMetaObject.connectSlotsByName(self)
 
-    def translate_ui(self):
+    def _translate_ui(self):
+        """
+        Set text in some UI elements
+        :return: None
+        """
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.find_name_but.setText(_translate("MainWindow", "Find"))
@@ -521,14 +572,3 @@ class MainUI(QMainWindow):
         self.mall.setText(_translate("MainWindow", "mall"))
         self.find_butt.setText(_translate("MainWindow", "Find"))
         self.clear_all.setText(_translate("MainWindow", "Clear All"))
-
-
-app = QtWidgets.QApplication(sys.argv)
-# create window
-
-
-ui = MainUI()
-# fill windo
-ui.show()
-
-sys.exit(app.exec_())

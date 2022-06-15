@@ -1,0 +1,20 @@
+{
+  "icons": {
+    "cafe": "coffee",
+    "fast_food": "cutlery",
+    "restaurant": "cutlery",
+    "bar": "beer",
+    "cinema": "film",
+    "fitness": "hand-rock-o",
+    "museum": "university",
+    "library": "book",
+    "supermarket": "shopping-basket",
+    "clothes": "shopping-bag",
+    "mall": "building",
+    "electronic": "calculator",
+    "hospital": "hospital-o",
+    "fuel": "tint",
+    "hotel": "bed",
+    "pharmacy": "plus-square"
+  }
+}
