@@ -35,7 +35,6 @@ class KdTreeMap(KdTree):
         lon_1 = node_1.point[1] * self.PI / 180
         lat_2 = node_2.point[0] * self.PI / 180
         lon_2 = node_2.point[1] * self.PI / 180
-        # TODO FIX THIS
 
         cl1 = math.cos(lat_1)
         cl2 = math.cos(lat_2)

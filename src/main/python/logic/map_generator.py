@@ -134,7 +134,7 @@ class Map(IMap):
                 point.points,
                 icon=folium.Icon(
                     icon=self._standard_icons.get(self._user_query, self.DEFAULT_ICON),
-                    # TODO COMMENT THIS
+                    # If the target has been passed, set its color to green, set the others to blue
                     color='green' if target_point and target_point == point else 'blue',
                     prefix="fa"),
                 popup=folium.Popup(folium.IFrame(point_data),

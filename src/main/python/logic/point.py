@@ -27,8 +27,7 @@ class Point:
 
     def __eq__(self, other):
         if not isinstance(other, Point):
-            raise TypeError("Objects to be compared with Point must be of type Point")
-        # TODO FIX THIS
+            return False
 
         if other.x == self._x and other.y == self._y:
             return True

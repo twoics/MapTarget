@@ -24,9 +24,6 @@ class KdTree:
         Builds a k-d tree based on the tuple of Points and Data
         :param init_data: Tuple with points and data by which to build a tree
         """
-        # TODO FIX list
-        self._nodes_in_area = []
-
         self._output_str = ""
 
         # Build tree if init nodes is not None
@@ -87,12 +84,13 @@ class KdTree:
         :param end_point: Second point
         :return: List with nodes
         """
-        self._nodes_in_area.clear()
-
         if start_point.x > end_point.x or start_point.y > end_point.y:
             raise ValueError("First point must be less then second")
-        self._entry_field(start_point, end_point, self._root_node)
-        return self._nodes_in_area
+        nodes_in_area = []
+        self._entry_field(start_point, end_point, self._root_node, nodes_in_area)
+
+        # nodes_in_area has been changed !
+        return nodes_in_area
 
     def rebuild_tree(self, init_data: INIT_TREE) -> Union[Node, None]:
         """
@@ -290,7 +288,7 @@ class KdTree:
 
         return root
 
-    def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, depth=0) -> None:
+    def _entry_field(self, start_pos: Point, end_pos: Point, node: Node, nodes_in_area: list, depth=0) -> None:
         """
         Iterated by nodes, depending on their location, relative to the area, goes
         to the left or right subtree, otherwise if the area intersects the dimension of current node,
@@ -308,14 +306,14 @@ class KdTree:
         point = node.point
 
         if point[axis] > start_pos[axis] and point[axis] > end_pos[axis]:  # Area left or down
-            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
+            self._entry_field(start_pos, end_pos, node.left_child, nodes_in_area, depth + 1)
         elif point[axis] < start_pos[axis] and point[axis] < end_pos[axis]:  # Area right or up
-            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+            self._entry_field(start_pos, end_pos, node.right_child, nodes_in_area, depth + 1)
         else:  # Area across axis
             if start_pos.x <= point.x <= end_pos.x and start_pos.y <= point.y <= end_pos.y:  # Point in area
-                self._nodes_in_area.append(node)
-            self._entry_field(start_pos, end_pos, node.left_child, depth + 1)
-            self._entry_field(start_pos, end_pos, node.right_child, depth + 1)
+                nodes_in_area.append(node)
+            self._entry_field(start_pos, end_pos, node.left_child, nodes_in_area, depth + 1)
+            self._entry_field(start_pos, end_pos, node.right_child, nodes_in_area, depth + 1)
 
     def _minimum_node(self, root: Node, axis_target: int, axis_current: int) -> Union[Node, None]:
         """
