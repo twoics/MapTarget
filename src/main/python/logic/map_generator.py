@@ -57,7 +57,14 @@ class Map(IMap):
         Generate new Pure Map
         :return: Folium Map
         """
-        new_map = self._pure_custom_map()
+        location = None
+
+        # If any objects were found
+        if self._points_on_map:
+            # Just take the location of the first point
+            location = self._points_on_map[0].point
+
+        new_map = self._pure_custom_map(location=location)
         self._points_on_map = None
         return new_map
 
