@@ -84,14 +84,7 @@ class MainUI(QMainWindow):
         self._setup_ui()
         self._init_slots()
 
-    def _map_error(self, warning_text: str):
-        """
-        Output an error to the user screen
-        :param warning_text: Error text
-        :return: None
-        """
-        QMessageBox.warning(self, "Some warning", warning_text)
-
+    @QtCore.pyqtSlot()
     def _map_by_name(self):
         """
         Emits a signal to install a new map through a UI text string
@@ -106,6 +99,7 @@ class MainUI(QMainWindow):
 
         self.search_objects.emit(name)
 
+    @QtCore.pyqtSlot()
     def _show_indicator(self):
         """
         Display operating indicator
@@ -114,6 +108,7 @@ class MainUI(QMainWindow):
         self.busy_indicator.setHidden(False)
         self.movie.start()
 
+    @QtCore.pyqtSlot()
     def _hide_indicator(self):
         """
         Hide operating indicator
@@ -121,6 +116,14 @@ class MainUI(QMainWindow):
         """
         self.movie.stop()
         self.busy_indicator.setHidden(True)
+
+    def _map_error(self, warning_text: str):
+        """
+        Output an error to the user screen
+        :param warning_text: Error text
+        :return: None
+        """
+        QMessageBox.warning(self, "Some warning", warning_text)
 
     def _init_buttons(self):
         """
