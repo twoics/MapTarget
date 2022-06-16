@@ -4,6 +4,7 @@ The module is used to display the map
 
 # Standard library import
 import io
+from typing import Union
 
 # Third party imports
 import folium
@@ -93,16 +94,27 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         """
         return self.pure_map_signal
 
-    def set_map(self, new_map: folium.Map):
+    def set_map(self, new_map: Union[folium.Map, None]):
         """
         Displays the transferred map
         :param new_map: Map to set
         :return: None
         """
-        self._mapa = new_map
         self.search_done.emit()
+        if new_map is None:
+            self._emit_error("None points on map")
+            return
+
+        self._mapa = new_map
         self.refresh_map.emit()
 
+    def get_view(self):
+        """
+        :return: Get QWebEngineView
+        """
+        return self._view
+
+    @QtCore.pyqtSlot()
     def request_nearest_object(self) -> None:
         """
         Request for the closest object to a point
@@ -113,6 +125,7 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
             return
         self.find_closest_signal.emit(self._marker_point)
 
+    @QtCore.pyqtSlot(str)
     def request_objects(self, query: str):
         """
         Request to find objects on query in the selected area
@@ -124,6 +137,7 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
             return
         self.find_objects_signal.emit(query, self._rect_points[0], self._rect_points[2])
 
+    @QtCore.pyqtSlot()
     def request_pure_map(self):
         """
         Request to install a blank map
@@ -131,21 +145,7 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
         """
         self.pure_map_signal.emit()
 
-    def get_view(self):
-        """
-        :return: Get QWebEngineView
-        """
-        return self._view
-
-    def _emit_error(self, message: str):
-        """
-        Sends a signal with an error message to the main UI
-        :param message: Error message
-        :return: None
-        """
-        self.some_error.emit(message)
-        self.search_done.emit()
-
+    @QtCore.pyqtSlot(tuple)
     def _item_drawn(self, data: tuple) -> None:
         """
         Reads coordinates from a marker or map area
@@ -159,14 +159,7 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
             self._rect_points = None
             self._marker_point = data[1]
 
-    def _init_signals(self) -> None:
-        """
-        Initializing signals
-        :return: None
-        """
-        self._page.item_drawn.connect(self._item_drawn)
-        self.refresh_map.connect(self._refresh_map)
-
+    @QtCore.pyqtSlot()
     def _refresh_map(self):
         """
         Updates the map UI, on the current map
@@ -180,3 +173,20 @@ class MapUI(QtCore.QObject, IView, metaclass=WindowViewMeta):
 
         # give html of folium map to webengine
         self._view.setHtml(data.getvalue().decode())
+
+    def _emit_error(self, message: str):
+        """
+        Sends a signal with an error message to the main UI
+        :param message: Error message
+        :return: None
+        """
+        self.some_error.emit(message)
+        self.search_done.emit()
+
+    def _init_signals(self) -> None:
+        """
+        Initializing signals
+        :return: None
+        """
+        self._page.item_drawn.connect(self._item_drawn)
+        self.refresh_map.connect(self._refresh_map)

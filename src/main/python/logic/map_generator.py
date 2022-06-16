@@ -61,7 +61,7 @@ class Map(IMap):
         self._points_on_map = None
         return new_map
 
-    def find_objects(self, query: str, start_point: Point, end_point: Point) -> folium.Map:
+    def find_objects(self, query: str, start_point: Point, end_point: Point) -> Union[folium.Map, None]:
         """
         Generates a folium map,
         if the query refers to a reserved type, (cafe, movie, gym)
@@ -80,6 +80,9 @@ class Map(IMap):
         self._user_query = query
         self._points_on_map = self._unpack_query_answer(query_res)
 
+        if not self._points_on_map:
+            return None
+
         middle_point = start_point.middle_point(end_point)
         new_map = self._build(target_point=None, location=middle_point)
         return new_map
@@ -90,10 +93,11 @@ class Map(IMap):
         object to the point, then marks the nearest
         object to it, and returns a modified map
         :param pivot: The point for which the nearest object is searched for
-        :return: Modified map
+        :return: Modified map or None if null objects on map
         """
         if not self._points_on_map:
             return None
+
         packed_data = self.pack_map_points(self._points_on_map)
         self._tree.rebuild_tree(packed_data)
 
