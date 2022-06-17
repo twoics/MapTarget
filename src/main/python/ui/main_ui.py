@@ -30,6 +30,8 @@ class MainUI(QMainWindow):
         # The gif that is shown when the app is running
         working_gif = json_connector.get_data("loading.gif").name
 
+        self.click_position = None
+
         self.centralwidget = QtWidgets.QWidget(self)
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.head = QtWidgets.QFrame(self.centralwidget)
@@ -83,6 +85,15 @@ class MainUI(QMainWindow):
 
         self._setup_ui()
         self._init_slots()
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Mouse click event, recording
+        the coordinates of the click
+        :param event: Click event
+        :return: None
+        """
+        self.click_position = event.globalPos()
 
     @QtCore.pyqtSlot()
     def _map_by_name(self):
@@ -149,6 +160,17 @@ class MainUI(QMainWindow):
         else:
             self.showMaximized()
 
+    @QtCore.pyqtSlot(QtGui.QMouseEvent)
+    def _move_window(self, event: QtGui.QMouseEvent) -> None:
+        """
+        Dragging the application window
+        :param event: Dragging window event
+        :return: None
+        """
+        self.move(self.pos() + event.globalPos() - self.click_position)
+        self.click_position = event.globalPos()
+        event.accept()
+
     def _map_error(self, warning_text: str):
         """
         Output an error to the user screen
@@ -203,6 +225,9 @@ class MainUI(QMainWindow):
         self.close_button.clicked.connect(self._close_app)
         self.minimize.clicked.connect(self._minimize_app)
         self.maximaze.clicked.connect(self._maximize_or_restore)
+
+        # Init drag and drop app
+        self.head.mouseMoveEvent = self._move_window
 
     def _setup_ui(self):
         """
