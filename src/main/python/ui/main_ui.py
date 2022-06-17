@@ -119,7 +119,21 @@ class MainUI(QMainWindow):
 
     @QtCore.pyqtSlot()
     def _close_app(self):
+        """
+        Closes the application
+        by pressing the button
+        :return: None
+        """
         self.close()
+
+    @QtCore.pyqtSlot()
+    def _minimize_app(self):
+        """
+        Minimizes the application
+        by pressing the button
+        :return: None
+        """
+        self.showMinimized()
 
     def _map_error(self, warning_text: str):
         """
@@ -173,6 +187,7 @@ class MainUI(QMainWindow):
 
         # Init top right buttons
         self.close_button.clicked.connect(self._close_app)
+        self.minimize.clicked.connect(self._minimize_app)
 
     def _setup_ui(self):
         """
@@ -295,13 +310,13 @@ class MainUI(QMainWindow):
         self.horizontalLayout_2.addWidget(self.maximaze)
         self.close_button.setCursor(QtGui.QCursor(Qt.Qt.PointingHandCursor))
         self.close_button.setStyleSheet("QPushButton{\n"
-                                 "        border-radius: 5;\n"
-                                 "        background-color : #dcdcdd;\n"
-                                 "}\n"
-                                 "QPushButton::hover\n"
-                                 "{\n"
-                                 "    background-color: rgb(255, 94, 91);\n"
-                                 "}")
+                                        "        border-radius: 5;\n"
+                                        "        background-color : #dcdcdd;\n"
+                                        "}\n"
+                                        "QPushButton::hover\n"
+                                        "{\n"
+                                        "    background-color: rgb(255, 94, 91);\n"
+                                        "}")
         self.close_button.setText("")
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(":/map/close.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
