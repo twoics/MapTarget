@@ -135,6 +135,20 @@ class MainUI(QMainWindow):
         """
         self.showMinimized()
 
+    @QtCore.pyqtSlot()
+    def _maximize_or_restore(self) -> None:
+        """
+        Event handler for pressing the
+        "minimize" button
+        Makes the window small
+        or large relative to the current size
+        :return: None
+        """
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+
     def _map_error(self, warning_text: str):
         """
         Output an error to the user screen
@@ -188,6 +202,7 @@ class MainUI(QMainWindow):
         # Init top right buttons
         self.close_button.clicked.connect(self._close_app)
         self.minimize.clicked.connect(self._minimize_app)
+        self.maximaze.clicked.connect(self._maximize_or_restore)
 
     def _setup_ui(self):
         """
