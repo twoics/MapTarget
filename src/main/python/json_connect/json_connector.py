@@ -5,7 +5,7 @@ The module contains a class that provides access to json files
 import json
 
 # Local application imports
-from base import BASE_CONTEXT
+from .base import BASE_CONTEXT
 
 
 class JsonConnector:

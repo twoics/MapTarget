@@ -12,7 +12,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 # Local application imports
-from src.main.python.ui.view_interface import IView
+from .view_interface import IView
 from .web_engine import WebEnginePage
 
 

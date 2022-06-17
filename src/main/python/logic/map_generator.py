@@ -11,13 +11,13 @@ import folium
 import overpy
 
 # Local application imports
-from src.main.python.logic.point import Point
-from src.main.python.logic.tree.tree_map import KdTreeMap
-from src.main.python.logic.map.queries import Query
-from src.main.python.logic.map.web_source import JAVA_SCRIPT, HTML
-from src.main.python.logic.map.web_parser import WebParser
-from src.main.python.logic.map.data_point import DataPoint
-from src.main.python.json_connector import JsonConnector
+from .point import Point
+from .tree.tree_map import KdTreeMap
+from .map.queries import Query
+from .map.web_source import JAVA_SCRIPT, HTML
+from .map.web_parser import WebParser
+from .map.data_point import DataPoint
+from json_connect.json_connector import JsonConnector
 from .map_interface import IMap
 
 
