@@ -1,6 +1,4 @@
-Here are the modules that implement the logic of the KD-tree
-
-- `point`: implements a point class on a two-dimensional plane
+### Modules Description
 
 - `node`: implements a node class containing a `point` and some useful data (or None)
 
