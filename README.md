@@ -13,5 +13,5 @@ Enter the following commands to create an exe file:
 pyinstaller --onefile  --noconsole --ico map-ico.ico .\main.py
 ```
 ```shell
-xcopy .\resources .\dist\resources /E 
+xcopy .\resources .\dist\resources\ /E 
 ```
