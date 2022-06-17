@@ -3,7 +3,7 @@ Module implementing the node of k-d tree
 """
 
 # Local application imports
-from src.main.python.logic.point import Point
+from ..point import Point
 
 
 class Node:

@@ -11,13 +11,13 @@ import folium
 import overpy
 
 # Local application imports
-from src.main.python.logic.point import Point
-from src.main.python.logic.tree.tree_map import KdTreeMap
-from src.main.python.logic.map.queries import Query
-from src.main.python.logic.map.web_source import JAVA_SCRIPT, HTML
-from src.main.python.logic.map.web_parser import WebParser
-from src.main.python.logic.map.data_point import DataPoint
-from src.main.python.json_connector import JsonConnector
+from .point import Point
+from .tree.tree_map import KdTreeMap
+from .map.queries import Query
+from .map.web_source import JAVA_SCRIPT, HTML
+from .map.web_parser import WebParser
+from .map.data_point import DataPoint
+from json_connect.json_connector import JsonConnector
 from .map_interface import IMap
 
 
@@ -57,7 +57,14 @@ class Map(IMap):
         Generate new Pure Map
         :return: Folium Map
         """
-        new_map = self._pure_custom_map()
+        location = None
+
+        # If any objects were found
+        if self._points_on_map:
+            # Just take the location of the first point
+            location = self._points_on_map[0].point
+
+        new_map = self._pure_custom_map(location=location)
         self._points_on_map = None
         return new_map
 

@@ -5,9 +5,9 @@ This module provides communication between the UI and the logic
 from PyQt5 import QtCore
 
 # Local application imports
-from ..logic.map_interface import IMap
-from ..ui.view_interface import IView
-from ..logic.point import Point
+from logic.map_interface import IMap
+from ui.view_interface import IView
+from logic.point import Point
 
 
 class Controller(QtCore.QObject):

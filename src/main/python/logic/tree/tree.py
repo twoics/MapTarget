@@ -6,7 +6,7 @@ Module implementing the k-d tree
 from typing import Union, Tuple, List
 
 # Local application imports
-from src.main.python.logic.point import Point
+from ..point import Point
 from .node import Node
 
 

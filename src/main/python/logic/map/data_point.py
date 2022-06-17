@@ -5,7 +5,7 @@ location point and information
 """
 
 # Third party imports
-from src.main.python.logic.point import Point
+from ..point import Point
 
 
 class DataPoint:

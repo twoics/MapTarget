@@ -13,7 +13,7 @@ import overpy
 from overpy.exception import OverpassTooManyRequests, OverpassGatewayTimeout
 
 # Local application imports
-from ...json_connector import JsonConnector
+from json_connect.json_connector import JsonConnector
 
 
 class Query:

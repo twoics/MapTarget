@@ -5,13 +5,13 @@ Module that implements the basic UI class
 # Third party imports
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
-from PyQt5.QtGui import QMovie, QColor
+from PyQt5.QtGui import QMovie
 
 # Local application imports
-from src.main.python.ui.map_ui import MapUI
-from src.main.python.json_connector import JsonConnector
+from .map_ui import MapUI
+from json_connect.json_connector import JsonConnector
 # Doesn't remove this, it's icons import
-import src.main.python.ui.icons
+from . import icons
 
 
 class MainUI(QMainWindow):
