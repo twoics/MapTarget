@@ -46,7 +46,7 @@ class MainUI(QMainWindow):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.service_butt)
         self.minimize = QtWidgets.QPushButton(self.service_butt)
         self.maximaze = QtWidgets.QPushButton(self.service_butt)
-        self.close = QtWidgets.QPushButton(self.service_butt)
+        self.close_button = QtWidgets.QPushButton(self.service_butt)
         self.body = QtWidgets.QFrame(self.centralwidget)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.body)
         self.query_butt = QtWidgets.QFrame(self.body)
@@ -117,6 +117,10 @@ class MainUI(QMainWindow):
         self.movie.stop()
         self.busy_indicator.setHidden(True)
 
+    @QtCore.pyqtSlot()
+    def _close_app(self):
+        self.close()
+
     def _map_error(self, warning_text: str):
         """
         Output an error to the user screen
@@ -125,7 +129,7 @@ class MainUI(QMainWindow):
         """
         QMessageBox.warning(self, "Some warning", warning_text)
 
-    def _init_buttons(self):
+    def _init_query_buttons(self):
         """
         Initialize slots for button press events
         :return: None
@@ -157,7 +161,7 @@ class MainUI(QMainWindow):
         Initializing slots for service UI signals
         :return: None
         """
-        self._init_buttons()
+        self._init_query_buttons()
 
         self.clear_all.clicked.connect(self._map.request_pure_map)
         self.find_butt.clicked.connect(self._map.request_nearest_object)
@@ -167,11 +171,15 @@ class MainUI(QMainWindow):
         self._map.search_done.connect(self._hide_indicator)
         self.search_objects.connect(self._map.request_objects)
 
+        # Init top right buttons
+        self.close_button.clicked.connect(self._close_app)
+
     def _setup_ui(self):
         """
         Set up UI all elements
         :return: None
         """
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         self.setObjectName("MainWindow")
         self.resize(1036, 730)
         self.centralwidget.setObjectName("centralwidget")
@@ -285,8 +293,8 @@ class MainUI(QMainWindow):
         self.maximaze.setIconSize(QtCore.QSize(24, 24))
         self.maximaze.setObjectName("maximaze")
         self.horizontalLayout_2.addWidget(self.maximaze)
-        self.close.setCursor(QtGui.QCursor(Qt.Qt.PointingHandCursor))
-        self.close.setStyleSheet("QPushButton{\n"
+        self.close_button.setCursor(QtGui.QCursor(Qt.Qt.PointingHandCursor))
+        self.close_button.setStyleSheet("QPushButton{\n"
                                  "        border-radius: 5;\n"
                                  "        background-color : #dcdcdd;\n"
                                  "}\n"
@@ -294,13 +302,13 @@ class MainUI(QMainWindow):
                                  "{\n"
                                  "    background-color: rgb(255, 94, 91);\n"
                                  "}")
-        self.close.setText("")
+        self.close_button.setText("")
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(":/map/close.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.close.setIcon(icon3)
-        self.close.setIconSize(QtCore.QSize(24, 24))
-        self.close.setObjectName("close")
-        self.horizontalLayout_2.addWidget(self.close)
+        self.close_button.setIcon(icon3)
+        self.close_button.setIconSize(QtCore.QSize(24, 24))
+        self.close_button.setObjectName("close_button")
+        self.horizontalLayout_2.addWidget(self.close_button)
         self.horizontalLayout.addWidget(self.service_butt, 0, Qt.Qt.AlignRight | Qt.Qt.AlignVCenter)
         self.verticalLayout.addWidget(self.head)
         self.body.setStyleSheet("QPushButton{\n"
