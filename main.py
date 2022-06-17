@@ -3,13 +3,13 @@ import sys
 
 # Third party imports
 from PyQt5 import QtCore
+from PyQt5.QtWidgets import QApplication
 
 # Local application imports
-from ui.map_ui import MapUI
-from ui.main_ui import MainUI
-from logic.map_generator import Map
-from controller.controller import Controller
-from json_connect.base import BASE_CONTEXT
+from python.ui.map_ui import MapUI
+from python.ui.main_ui import MainUI
+from python.logic.map_generator import Map
+from python.controller.controller import Controller
 
 
 class Main:
@@ -32,6 +32,6 @@ class Main:
 
 
 if __name__ == "__main__":
+    app = QApplication(sys.argv)
     main = Main()
-    exit_code = BASE_CONTEXT.app.exec()
-    sys.exit(exit_code)
+    sys.exit(app.exec_())

@@ -9,7 +9,7 @@ from PyQt5.QtGui import QMovie
 
 # Local application imports
 from .map_ui import MapUI
-from json_connect.json_connector import JsonConnector
+from python.json_connect.json_connector import JsonConnector
 # Doesn't remove this, it's icons import
 from . import icons
 

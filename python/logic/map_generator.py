@@ -17,7 +17,7 @@ from .map.queries import Query
 from .map.web_source import JAVA_SCRIPT, HTML
 from .map.web_parser import WebParser
 from .map.data_point import DataPoint
-from json_connect.json_connector import JsonConnector
+from python.json_connect.json_connector import JsonConnector
 from .map_interface import IMap
 
 
