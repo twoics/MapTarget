@@ -21,7 +21,7 @@ class IView(ABC):
         pass
 
     @abstractmethod
-    def nearest_object_request(self) -> QtCore.pyqtSignal(tuple):
+    def nearest_object_signal(self) -> QtCore.pyqtSignal(tuple):
         """
         param: Point coordinates
         :return: Signal for listening, emitted when the user wants to
@@ -30,7 +30,7 @@ class IView(ABC):
         pass
 
     @abstractmethod
-    def all_object_request(self) -> QtCore.pyqtSignal(str, tuple, tuple):
+    def objects_in_area_signal(self) -> QtCore.pyqtSignal(str, tuple, tuple):
         """
         param: query, start_point, end_point
         :return:Signal for listening, emitted when the user
@@ -39,7 +39,7 @@ class IView(ABC):
         pass
 
     @abstractmethod
-    def clear_map_request(self) -> QtCore.pyqtSignal():
+    def clear_map_signal(self) -> QtCore.pyqtSignal():
         """
         :return: Signal for listening, emitted when the user wants to get a blank map
         """

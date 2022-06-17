@@ -75,9 +75,9 @@ class Controller(QtCore.QObject):
         Initializing slots of signals
         :return: None
         """
-        all_objects_request = self._view.all_object_request()
-        nearest_object_request = self._view.nearest_object_request()
-        pure_map_request = self._view.clear_map_request()
+        all_objects_request = self._view.objects_in_area_signal()
+        nearest_object_request = self._view.nearest_object_signal()
+        pure_map_request = self._view.clear_map_signal()
         zoom_changed = self._view.zoom_changed_signal()
 
         all_objects_request.connect(self.all_objects_map)

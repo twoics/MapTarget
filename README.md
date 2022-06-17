@@ -10,6 +10,8 @@ the result of the program is displayed using PyQt5
 ## Build
 Enter the following commands to create an exe file:
 ```shell
-pyinstaller --onefile  --noconsole .\main.py 
+pyinstaller --onefile  --noconsole --ico map-ico.ico .\main.py
+```
+```shell
 xcopy .\resources .\dist\resources /E 
 ```
